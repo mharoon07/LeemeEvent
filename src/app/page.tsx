@@ -37,7 +37,7 @@ export default function Home() {
       {/* Hero Section with Left Vertical Navigation Bar embedded */}
       <Hero onSearchSubmit={handleSearchSubmit} />
 
-      {/* "Why LEEMEVENT" Value Proposition Section */}
+      {/* "Why LEEMEVENTS" Value Proposition Section */}
       <ValueProps />
 
       {/* "How It Works" 7-Step Process Timeline */}

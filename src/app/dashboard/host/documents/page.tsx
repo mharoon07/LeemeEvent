@@ -30,10 +30,10 @@ export default function HostDocumentsPage() {
     <HostLayout>
       <div className="space-y-8">
         <div>
-          <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block font-semibold">
+          <span className="text-xs font-semibold text-taupe block">
             Unified Vault
           </span>
-          <h1 className="font-classico text-3xl font-normal uppercase tracking-wide text-charcoal mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
             Documents & Contracts
           </h1>
         </div>
@@ -42,14 +42,14 @@ export default function HostDocumentsPage() {
           {docs.map((doc, i) => (
             <div
               key={i}
-              className="bg-sand-50 border border-taupe/20 rounded-2xl p-5 flex items-center justify-between shadow-soft-sm"
+              className="bg-white border border-stone-200/90 rounded-2xl p-5 flex items-center justify-between shadow-soft-sm hover:border-taupe/40 hover:shadow-soft-md transition-all"
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-taupe/10 text-taupe flex items-center justify-center">
                   <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-classico text-sm uppercase font-semibold text-charcoal">
+                  <h4 className="text-sm font-semibold text-charcoal">
                     {doc.name}
                   </h4>
                   <span className="text-xs text-charcoal/60 font-sans block mt-0.5">

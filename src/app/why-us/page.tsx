@@ -25,7 +25,7 @@ export default function WhyUsPage() {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sand-200/80 border border-taupe/20 text-taupe text-xs font-classico tracking-[0.2em] uppercase mb-6"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Why Choose LEEMEVENT</span>
+            <span>Why Choose LEEMEVENTS</span>
           </motion.div>
 
           <motion.h1
@@ -43,7 +43,7 @@ export default function WhyUsPage() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="mt-6 text-base sm:text-xl text-charcoal/80 max-w-2xl mx-auto leading-relaxed"
           >
-            Planning a celebration should bring joy, not overwhelm. Discover how LEEMEVENT transforms multi-vendor event coordination into one seamless, elegant experience.
+            Planning a celebration should bring joy, not overwhelm. Discover how LEEMEVENTS transforms multi-vendor event coordination into one seamless, elegant experience.
           </motion.p>
         </div>
       </section>
@@ -51,7 +51,7 @@ export default function WhyUsPage() {
       {/* Value Propositions Grid */}
       <ValueProps />
 
-      {/* Comparison Table Section: Traditional vs LEEMEVENT */}
+      {/* Comparison Table Section: Traditional vs LEEMEVENTS */}
       <section className="py-20 bg-sand-50/80 border-t border-taupe/15">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
@@ -59,7 +59,7 @@ export default function WhyUsPage() {
               The Difference
             </span>
             <h2 className="font-classico text-3xl sm:text-4xl uppercase font-normal text-charcoal tracking-wide">
-              Traditional Planning vs. The LEEMEVENT Way
+              Traditional Planning vs. The LEEMEVENTS Way
             </h2>
           </div>
 
@@ -93,10 +93,10 @@ export default function WhyUsPage() {
               </ul>
             </div>
 
-            {/* LEEMEVENT Way */}
+            {/* LEEMEVENTS Way */}
             <div className="bg-sand-100 border-2 border-taupe rounded-3xl p-8 shadow-soft-lg relative">
               <div className="inline-block px-3 py-1 rounded-full bg-taupe/20 text-taupe text-xs font-classico tracking-wider uppercase font-semibold mb-6">
-                The LEEMEVENT Solution
+                The LEEMEVENTS Solution
               </div>
               <ul className="space-y-4 text-sm text-charcoal/90">
                 <li className="flex items-start gap-3 font-medium">

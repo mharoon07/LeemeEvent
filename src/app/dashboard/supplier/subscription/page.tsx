@@ -32,7 +32,7 @@ export default function SupplierSubscriptionPage() {
           </h2>
 
           <p className="text-sm text-charcoal/70 leading-relaxed max-w-md mx-auto font-sans">
-            Early verified suppliers receive 100% free lead matching and zero commission fees during the LEEMEVENT launch period.
+            Early verified suppliers receive 100% free lead matching and zero commission fees during the LEEMEVENTS launch period.
           </p>
         </div>
       </div>

@@ -54,10 +54,10 @@ export default function HostRequestsPage() {
     <HostLayout>
       <div className="space-y-8">
         <div>
-          <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block font-semibold">
+          <span className="text-xs font-semibold text-taupe block">
             Status Tracker
           </span>
-          <h1 className="font-classico text-3xl font-normal uppercase tracking-wide text-charcoal mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
             Requests & Booking Status
           </h1>
         </div>
@@ -66,7 +66,7 @@ export default function HostRequestsPage() {
           {requests.map((req) => (
             <div
               key={req.id}
-              className="bg-sand-50 border border-taupe/20 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-soft-sm"
+              className="bg-white border border-stone-200/90 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-soft-sm hover:border-taupe/40 hover:shadow-soft-md transition-all"
             >
               <div className="flex items-center gap-4 w-full sm:w-auto">
                 <div className="relative h-20 w-24 rounded-2xl overflow-hidden shrink-0">
@@ -74,14 +74,14 @@ export default function HostRequestsPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-classico tracking-wider uppercase text-taupe font-semibold">
+                    <span className="text-xs text-taupe font-semibold">
                       {req.category}
                     </span>
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-sans font-bold border ${req.statusBadge}`}>
                       {req.status}
                     </span>
                   </div>
-                  <h3 className="font-classico text-lg uppercase font-semibold text-charcoal">
+                  <h3 className="text-lg font-bold text-charcoal">
                     {req.supplierName}
                   </h3>
                   <span className="text-xs text-charcoal/60 font-sans block mt-0.5">

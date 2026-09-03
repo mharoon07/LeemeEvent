@@ -43,10 +43,10 @@ export default function HostCartPage() {
     <HostLayout>
       <div className="space-y-8">
         <div>
-          <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block font-semibold">
+          <span className="text-xs font-semibold text-taupe block">
             Combined Proposal Summary
           </span>
-          <h1 className="font-classico text-3xl font-normal uppercase tracking-wide text-charcoal mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
             My Selected Supplier Package
           </h1>
         </div>
@@ -59,17 +59,17 @@ export default function HostCartPage() {
                 items.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-sand-50 border border-taupe/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-soft-sm"
+                    className="bg-white border border-stone-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-soft-sm hover:border-taupe/40 transition-all"
                   >
                     <div className="flex items-center gap-4 w-full sm:w-auto">
                       <div className="relative h-20 w-24 rounded-xl overflow-hidden shrink-0">
                         <Image src={item.image} alt={item.name} fill className="object-cover" />
                       </div>
                       <div>
-                        <span className="text-[10px] font-classico tracking-wider uppercase text-taupe font-semibold block">
+                        <span className="text-xs text-taupe font-semibold uppercase tracking-wider block">
                           {item.category}
                         </span>
-                        <h4 className="font-classico text-lg uppercase font-semibold text-charcoal">
+                        <h4 className="text-base font-bold text-charcoal">
                           {item.name}
                         </h4>
                         <span className="font-mono text-sm font-bold text-taupe">
@@ -81,7 +81,7 @@ export default function HostCartPage() {
                     <button
                       type="button"
                       onClick={() => removeItem(item.id)}
-                      className="p-2 text-charcoal/50 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors self-end sm:self-center"
+                      className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors self-end sm:self-center"
                       title="Remove from request"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -89,11 +89,13 @@ export default function HostCartPage() {
                   </div>
                 ))
               ) : (
-                <div className="bg-sand-50 border border-taupe/20 rounded-3xl p-12 text-center space-y-4">
-                  <ShoppingBag className="w-12 h-12 text-taupe/50 mx-auto" />
-                  <h3 className="font-classico text-xl uppercase font-semibold text-charcoal">Your Selection is Empty</h3>
-                  <p className="text-xs text-charcoal/70">Browse our directory to add suppliers to your combined proposal.</p>
-                  <Link href="/dashboard/host/browse" className="btn-primary inline-flex px-6 py-2.5 text-xs">
+                <div className="bg-white border border-stone-200/90 rounded-3xl p-12 text-center space-y-4 shadow-soft-sm">
+                  <div className="w-14 h-14 rounded-2xl bg-taupe/10 text-taupe flex items-center justify-center mx-auto">
+                    <ShoppingBag className="w-7 h-7 stroke-[1.5]" />
+                  </div>
+                  <h3 className="text-xl font-bold text-charcoal">Your Selection is Empty</h3>
+                  <p className="text-sm text-stone-500">Browse our directory to add suppliers to your combined proposal.</p>
+                  <Link href="/dashboard/host/browse" className="btn-primary inline-flex px-6 py-2.5 text-sm font-semibold">
                     Browse Suppliers Directory
                   </Link>
                 </div>
@@ -101,18 +103,18 @@ export default function HostCartPage() {
             </div>
 
             {/* Price Summary & Checkout Panel */}
-            <div className="lg:col-span-4 bg-sand-50 border border-taupe/20 rounded-3xl p-6 space-y-6 shadow-soft-sm">
-              <h3 className="font-classico text-xl uppercase font-semibold text-charcoal border-b border-taupe/15 pb-4">
+            <div className="lg:col-span-4 bg-white border border-stone-200/90 rounded-3xl p-6 space-y-6 shadow-soft-sm">
+              <h3 className="text-lg font-bold text-charcoal border-b border-stone-100 pb-4">
                 Request Summary
               </h3>
 
-              <div className="space-y-3 text-xs text-charcoal/80">
+              <div className="space-y-3 text-xs text-stone-600">
                 <div className="flex justify-between">
                   <span>Selected Suppliers ({items.length})</span>
-                  <span className="font-mono font-bold">${totalAmount.toLocaleString()}</span>
+                  <span className="font-mono font-bold text-charcoal">${totalAmount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>LEEMEVENT Concierge Match</span>
+                  <span>LEEMEVENTS Concierge Match</span>
                   <span className="text-emerald-700 font-bold">FREE</span>
                 </div>
                 <div className="flex justify-between">
@@ -121,25 +123,25 @@ export default function HostCartPage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-taupe/15 space-y-1">
-                <div className="flex justify-between text-sm font-classico tracking-wider uppercase font-bold text-charcoal">
+              <div className="pt-4 border-t border-stone-100 space-y-1">
+                <div className="flex justify-between text-sm font-bold text-charcoal">
                   <span>Estimated Package Total</span>
-                  <span className="font-mono text-lg text-taupe">${totalAmount.toLocaleString()}</span>
+                  <span className="font-mono text-lg font-bold text-taupe">${totalAmount.toLocaleString()}</span>
                 </div>
-                <span className="text-[10px] text-charcoal/60 block">Includes date hold & partner availability sync</span>
+                <span className="text-xs text-stone-500 block">Includes date hold & partner availability sync</span>
               </div>
 
               <button
                 type="button"
                 disabled={items.length === 0}
                 onClick={() => setSent(true)}
-                className="w-full btn-primary py-3.5 text-xs font-classico tracking-[0.2em] uppercase font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full btn-primary py-3.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 shadow-soft-sm hover:shadow-soft-md transition-all"
               >
-                <Sparkles className="w-4 h-4 text-sand" />
+                <Sparkles className="w-4 h-4 text-white" />
                 <span>Send Combined Request</span>
               </button>
 
-              <div className="flex items-center justify-center gap-2 text-[11px] text-charcoal/60 pt-2">
+              <div className="flex items-center justify-center gap-2 text-xs text-charcoal/60 pt-2">
                 <ShieldCheck className="w-4 h-4 text-taupe shrink-0" />
                 <span>Zero payment due until suppliers accept your date</span>
               </div>
@@ -150,14 +152,14 @@ export default function HostCartPage() {
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8 stroke-[3]" />
             </div>
-            <h2 className="font-classico text-2xl uppercase font-semibold text-charcoal">
+            <h2 className="text-2xl font-bold text-charcoal">
               Combined Request Sent!
             </h2>
-            <p className="text-xs text-charcoal/80 leading-relaxed font-sans">
+            <p className="text-sm text-charcoal/80 leading-relaxed font-sans">
               Your request for <strong>{items.length} suppliers</strong> (${totalAmount.toLocaleString()} total package) has been transmitted. Your assigned matchmaker will monitor responses.
             </p>
             <div className="pt-4">
-              <Link href="/dashboard/host/requests" className="btn-primary px-8 py-3 text-xs tracking-widest inline-flex items-center gap-2">
+              <Link href="/dashboard/host/requests" className="btn-primary px-8 py-3 text-sm font-medium inline-flex items-center gap-2">
                 <span>Track Booking Status</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Eye, EyeOff, Check, Compass, ArrowRight } from 'lucide-react';
+import { X, Sparkles, Eye, EyeOff, Check, Compass, ArrowRight, UserPlus, LogIn } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -74,8 +74,8 @@ export default function AuthModal({
                 <div className="w-12 h-12 rounded-2xl bg-taupe/10 text-taupe flex items-center justify-center mx-auto mb-3">
                   <Compass className="w-6 h-6 stroke-[1.5]" />
                 </div>
-                <span className="font-classico text-2xl font-normal tracking-[0.2em] uppercase text-charcoal block">
-                  LEEMEVENT
+                <span className="text-2xl font-bold tracking-normal text-charcoal block">
+                  LEEMEVENTS
                 </span>
                 <p className="text-xs text-charcoal/70 mt-1 font-sans">
                   {mode === 'signup'
@@ -85,28 +85,28 @@ export default function AuthModal({
               </div>
 
               {/* Sign In / Sign Up Mode Toggle */}
-              <div className="flex bg-sand-200/60 p-1 rounded-2xl mb-6">
+              <div className="flex bg-stone/70 p-1.5 rounded-2xl mb-6 border border-taupe/25 shadow-inner relative">
                 <button
                   type="button"
                   onClick={() => setMode('signup')}
-                  className={`flex-1 py-2 text-xs font-classico tracking-wider uppercase font-semibold rounded-xl transition-all ${
-                    mode === 'signup'
-                      ? 'bg-sand text-charcoal shadow-soft-sm'
-                      : 'text-charcoal/60 hover:text-charcoal'
-                  }`}
+                  className={`relative flex-1 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-taupe ${mode === 'signup'
+                      ? 'bg-charcoal text-sand shadow-md ring-1 ring-charcoal/20'
+                      : 'text-charcoal/70 hover:text-charcoal hover:bg-sand/40'
+                    }`}
                 >
-                  Create Account
+                  <UserPlus className={`w-3.5 h-3.5 transition-colors ${mode === 'signup' ? 'text-taupe-200' : 'text-charcoal/40'}`} />
+                  <span>Create Account</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode('signin')}
-                  className={`flex-1 py-2 text-xs font-classico tracking-wider uppercase font-semibold rounded-xl transition-all ${
-                    mode === 'signin'
-                      ? 'bg-sand text-charcoal shadow-soft-sm'
-                      : 'text-charcoal/60 hover:text-charcoal'
-                  }`}
+                  className={`relative flex-1 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-taupe ${mode === 'signin'
+                      ? 'bg-charcoal text-sand shadow-md ring-1 ring-charcoal/20'
+                      : 'text-charcoal/70 hover:text-charcoal hover:bg-sand/40'
+                    }`}
                 >
-                  Sign In
+                  <LogIn className={`w-3.5 h-3.5 transition-colors ${mode === 'signin' ? 'text-taupe-200' : 'text-charcoal/40'}`} />
+                  <span>Sign In</span>
                 </button>
               </div>
 
@@ -115,32 +115,40 @@ export default function AuthModal({
                 <button
                   type="button"
                   onClick={() => setUserRole('host')}
-                  className={`p-3 rounded-2xl border text-left transition-all ${
-                    userRole === 'host'
-                      ? 'border-taupe bg-taupe/10 text-taupe font-semibold'
-                      : 'border-taupe/20 bg-transparent text-charcoal/70 hover:border-taupe/40'
-                  }`}
+                  className={`p-3 rounded-2xl border text-left transition-all relative focus:outline-none focus-visible:ring-2 focus-visible:ring-taupe ${userRole === 'host'
+                      ? 'border-taupe bg-taupe/15 text-charcoal ring-1 ring-taupe shadow-soft-sm font-semibold'
+                      : 'border-taupe/20 bg-sand/50 text-charcoal/70 hover:border-taupe/40'
+                    }`}
                 >
-                  <span className="block text-xs font-classico tracking-wider uppercase">Event Host</span>
+                  {userRole === 'host' && (
+                    <span className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-taupe text-sand flex items-center justify-center text-[10px] shadow-sm">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </span>
+                  )}
+                  <span className="block text-sm font-bold text-charcoal">Event Host</span>
                   <span className="block text-[10px] text-charcoal/60 font-sans mt-0.5">Planning a celebration</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setUserRole('supplier')}
-                  className={`p-3 rounded-2xl border text-left transition-all ${
-                    userRole === 'supplier'
-                      ? 'border-taupe bg-taupe/10 text-taupe font-semibold'
-                      : 'border-taupe/20 bg-transparent text-charcoal/70 hover:border-taupe/40'
-                  }`}
+                  className={`p-3 rounded-2xl border text-left transition-all relative focus:outline-none focus-visible:ring-2 focus-visible:ring-taupe ${userRole === 'supplier'
+                      ? 'border-taupe bg-taupe/15 text-charcoal ring-1 ring-taupe shadow-soft-sm font-semibold'
+                      : 'border-taupe/20 bg-sand/50 text-charcoal/70 hover:border-taupe/40'
+                    }`}
                 >
-                  <span className="block text-xs font-classico tracking-wider uppercase">Supplier Partner</span>
+                  {userRole === 'supplier' && (
+                    <span className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-taupe text-sand flex items-center justify-center text-[10px] shadow-sm">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </span>
+                  )}
+                  <span className="block text-sm font-bold text-charcoal">Supplier Partner</span>
                   <span className="block text-[10px] text-charcoal/60 font-sans mt-0.5">Venue, Chef, DJ, Photo</span>
                 </button>
               </div>
 
               {/* Social Logins */}
-              <div className="space-y-2.5 mb-5">
+              <div className="mb-5">
                 <button
                   type="button"
                   onClick={handleSubmit}
@@ -154,17 +162,6 @@ export default function AuthModal({
                   </svg>
                   <span>Continue with Google</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="w-full bg-charcoal text-sand hover:bg-charcoal/90 rounded-xl py-2.5 px-4 text-xs font-semibold flex items-center justify-center gap-3 transition-all shadow-soft-sm"
-                >
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.85c.66-.8 1.11-1.92.99-3.04-.96.04-2.13.64-2.82 1.44-.61.71-1.15 1.86-1 2.97 1.08.08 2.17-.56 2.83-1.37z" />
-                  </svg>
-                  <span>Continue with Apple</span>
-                </button>
               </div>
 
               {/* Divider */}
@@ -172,7 +169,7 @@ export default function AuthModal({
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-taupe/20" />
                 </div>
-                <span className="relative bg-sand-50 px-3 text-[11px] font-classico uppercase tracking-wider text-charcoal/50">
+                <span className="relative bg-sand-50 px-3 text-xs text-charcoal/50">
                   Or continue with email
                 </span>
               </div>
@@ -251,20 +248,20 @@ export default function AuthModal({
 
                 <button
                   type="submit"
-                  className="w-full btn-primary py-3 text-xs font-classico tracking-[0.2em] uppercase font-semibold flex items-center justify-center gap-2 mt-2"
+                  className="w-full btn-primary py-3 text-sm font-semibold flex items-center justify-center gap-2 mt-2"
                 >
                   <Sparkles className="w-4 h-4 text-sand" />
                   <span>
                     {mode === 'signup'
                       ? 'Create Free Account & Start Event'
-                      : 'Sign In to LEEMEVENT'}
+                      : 'Sign In to LEEMEVENTS'}
                   </span>
                 </button>
               </form>
 
               <div className="text-center pt-4 border-t border-taupe/15 mt-4">
                 <p className="text-[10px] text-charcoal/60 leading-relaxed">
-                  By continuing, you agree to LEEMEVENT&apos;s{' '}
+                  By continuing, you agree to LEEMEVENTS&apos;s{' '}
                   <a href="#" className="text-taupe underline">Terms of Service</a> and{' '}
                   <a href="#" className="text-taupe underline">Privacy Policy</a>.
                 </p>

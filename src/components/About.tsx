@@ -14,7 +14,7 @@ export default function About({ onLearnMoreClick }: AboutProps) {
     <section id="about" className="py-28 bg-sand border-t border-taupe/15 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          
+
           {/* Left Column: Wabi-Sabi Overlapping Image Composition */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -75,7 +75,7 @@ export default function About({ onLearnMoreClick }: AboutProps) {
           >
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-taupe/10 text-taupe text-xs font-classico tracking-[0.2em] uppercase">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>About LEEMEVENT</span>
+              <span>About LEEMEVENTS</span>
             </div>
 
             <h2 className="font-classico text-3xl sm:text-5xl uppercase font-normal text-charcoal tracking-wide leading-[1.15] text-balance">
@@ -83,7 +83,7 @@ export default function About({ onLearnMoreClick }: AboutProps) {
             </h2>
 
             <p className="text-base sm:text-lg text-charcoal/80 leading-relaxed">
-              LEEMEVENT was born out of a simple realization: planning a milestone celebration was far too often overshadowed by managing dozens of separate email threads, fragmented price quotes, and misaligned vendor schedules.
+              LEEMEVENTS was born out of a simple realization: planning a milestone celebration was far too often overshadowed by managing dozens of separate email threads, fragmented price quotes, and misaligned vendor schedules.
             </p>
 
             <p className="text-sm sm:text-base text-charcoal/70 leading-relaxed">

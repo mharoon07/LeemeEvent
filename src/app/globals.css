@@ -74,28 +74,31 @@
 
 @layer base {
   :root {
-    --bg-sand: #EAE0D5;
+    --bg-sand: #F8F7F4;
     --accent-taupe: #8C7355;
-    --text-charcoal: #28231D;
+    --text-charcoal: #1F1D1A;
   }
 
   html {
     scroll-behavior: smooth;
-    background-color: #EAE0D5;
-    color: #28231D;
-    font-family: 'Classico', 'Tenor Sans', 'Alegreya Sans', 'Inter', sans-serif;
+    background-color: #F8F7F4;
+    color: #1F1D1A;
+    font-family: 'Plus Jakarta Sans', var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 
   body {
-    background-color: #EAE0D5;
-    color: #28231D;
+    background-color: #F8F7F4;
+    color: #1F1D1A;
     overflow-x: hidden;
-    line-height: 1.7;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    font-family: 'Plus Jakarta Sans', var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Classico', 'Tenor Sans', 'Alegreya Sans', 'Marcellus', sans-serif;
+    font-family: 'Plus Jakarta Sans', var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    letter-spacing: -0.025em;
+    font-weight: 700;
   }
 
   ::selection {
@@ -104,14 +107,14 @@
   }
 }
 
-/* Classico & Wabi-Sabi Editorial Typography */
+/* Modern Clean Typography */
 .font-classico {
-  font-family: 'Classico', 'Tenor Sans', 'Alegreya Sans', 'Inter', sans-serif;
-  letter-spacing: 0.08em;
+  font-family: 'Plus Jakarta Sans', var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: normal;
 }
 
 .font-serif-display {
-  font-family: 'Tenor Sans', 'Classico', var(--font-cormorant), serif;
+  font-family: 'Plus Jakarta Sans', var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   letter-spacing: -0.01em;
 }
 
@@ -141,10 +144,10 @@
 .btn-primary {
   background-color: #8C7355;
   color: #FAF7F2;
-  font-family: 'Classico', 'Tenor Sans', 'Inter', sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-family: var(--font-plus-jakarta), 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
   border-radius: 0.75rem;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 4px 14px rgba(140, 115, 85, 0.25);
@@ -164,10 +167,10 @@
   background-color: transparent;
   color: #28231D;
   border: 1px solid rgba(140, 115, 85, 0.35);
-  font-family: 'Classico', 'Tenor Sans', 'Inter', sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-family: var(--font-plus-jakarta), 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
   border-radius: 0.75rem;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }

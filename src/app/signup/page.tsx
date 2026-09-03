@@ -4,16 +4,13 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { useAuth, UserRole } from '@/context/AuthContext';
-import { Sparkles, Eye, EyeOff, Compass, ArrowLeft, Heart, Store } from 'lucide-react';
+import { Sparkles, Eye, EyeOff, Compass, ArrowLeft, Heart, Store, Check } from 'lucide-react';
 
 export default function SignupPage() {
   const router = useRouter();
   const { signup } = useAuth();
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signup');
   const [userRole, setUserRole] = useState<UserRole>('host');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -21,11 +18,11 @@ export default function SignupPage() {
     name: '',
     email: '',
     password: '',
-    rememberMe: true,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     const newUser = signup(formData.email, userRole, formData.name);
     if (newUser.role === 'host') {
       router.push('/dashboard/host/onboarding');
@@ -35,14 +32,11 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen bg-sand text-charcoal font-sans flex flex-col justify-between selection:bg-taupe selection:text-sand">
-      <Navbar onOpenModal={() => {}} />
+    <main className="min-h-screen bg-sand-50 text-charcoal font-sans selection:bg-taupe selection:text-sand">
+      <div className="w-full min-h-screen grid grid-cols-1 lg:grid-cols-12">
 
-      <div className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full flex-1 flex items-center justify-center">
-        <div className="w-full bg-sand-50 border border-taupe/20 rounded-3xl shadow-soft-lg overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[640px]">
-          
-          {/* Left Decorative Image & Brand Story Column */}
-          <div className="lg:col-span-5 relative hidden lg:flex flex-col justify-between p-10 bg-charcoal text-sand overflow-hidden">
+        {/* Left Decorative Image & Brand Story Column */}
+        <div className="lg:col-span-5 relative hidden lg:flex flex-col justify-between p-10 lg:p-14 bg-charcoal text-sand min-h-screen sticky top-0">
             <div className="absolute inset-0 z-0 opacity-40 mix-blend-overlay">
               <Image
                 src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1200&auto=format&fit=crop"
@@ -52,7 +46,7 @@ export default function SignupPage() {
                 className="object-cover"
               />
             </div>
-            
+
             <div className="relative z-10">
               <Link href="/" className="inline-flex items-center gap-2 text-xs font-classico tracking-[0.2em] uppercase text-sand/80 hover:text-sand mb-8 transition-colors">
                 <ArrowLeft className="w-4 h-4" />
@@ -64,60 +58,72 @@ export default function SignupPage() {
               </div>
 
               <h2 className="font-classico text-3xl sm:text-4xl font-normal uppercase tracking-wide text-sand leading-tight">
-                Plan your celebration <span className="font-serif-display lowercase italic font-normal text-taupe-200">with calm.</span>
+                Join the luxury <span className="font-serif-display lowercase italic font-normal text-taupe-200">event collective.</span>
               </h2>
 
               <p className="mt-4 text-sm text-sand/80 leading-relaxed max-w-sm">
-                Join thousands of event hosts and curated luxury suppliers using LEEMEVENT for combined request planning and unified contracts.
+                Whether you are hosting an unforgettable celebration or offering premier event services, start your journey here.
               </p>
             </div>
 
             <div className="relative z-10 pt-8 border-t border-sand/15 flex items-center justify-between text-[11px] font-classico tracking-widest text-sand/60 uppercase">
               <span>Wabi Sabi Marketplace</span>
-              <span>© 2026 LEEMEVENT</span>
+              <span>© 2026 LEEMEVENTS</span>
             </div>
           </div>
 
           {/* Right Form Column */}
-          <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 flex flex-col justify-center bg-sand-50">
-            <div className="max-w-md mx-auto w-full">
-              
+          <div className="lg:col-span-7 p-6 sm:p-10 lg:p-16 flex flex-col justify-center bg-sand-50 min-h-screen overflow-y-auto">
+            <div className="max-w-md mx-auto w-full py-8 sm:py-12">
+
               {/* Header Logo */}
               <div className="text-center lg:text-left mb-6">
-                <span className="font-classico text-2xl font-normal tracking-[0.2em] uppercase text-charcoal block">
-                  LEEMEVENT
-                </span>
-                <h1 className="font-classico text-2xl sm:text-3xl font-normal uppercase tracking-wide text-charcoal mt-2">
+                <Link
+                  href="/"
+                  className="inline-flex lg:hidden items-center gap-2 text-xs font-classico tracking-[0.2em] uppercase text-charcoal/60 hover:text-charcoal mb-4 transition-colors"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to Home</span>
+                </Link>
+
+                <Link href="/" className="text-2xl font-bold tracking-normal text-charcoal block hover:text-taupe transition-colors">
+                  LEEMEVENTS
+                </Link>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-charcoal mt-2">
                   Create Your Account
                 </h1>
                 <p className="text-xs text-charcoal/70 mt-1">
-                  What brings you to LEEMEVENT? Select your role to get started.
+                  What brings you to LEEMEVENTS? Select your role to get started.
                 </p>
               </div>
 
               {/* Role Selection */}
               <div className="mb-6 space-y-2">
-                <label className="text-xs font-classico tracking-wider uppercase font-semibold text-charcoal/80 block mb-2">
-                  What brings you to LEEMEVENT?
+                <label className="text-xs font-semibold text-charcoal/80 block mb-2">
+                  What brings you to LEEMEVENTS?
                 </label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setUserRole('host')}
-                    className={`p-3.5 rounded-2xl border text-left transition-all relative overflow-hidden ${
-                      userRole === 'host'
-                        ? 'border-taupe bg-taupe/15 text-taupe font-semibold shadow-soft-sm'
+                    className={`p-3.5 rounded-2xl border text-left transition-all relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-taupe ${userRole === 'host'
+                        ? 'border-taupe bg-taupe/15 text-charcoal ring-1 ring-taupe shadow-soft-sm font-semibold'
                         : 'border-taupe/20 bg-sand text-charcoal/75 hover:border-taupe/40'
-                    }`}
+                      }`}
                   >
+                    {userRole === 'host' && (
+                      <span className="absolute top-3 right-3 w-4 h-4 rounded-full bg-taupe text-sand flex items-center justify-center text-[10px] shadow-sm">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </span>
+                    )}
                     <div className="flex items-center gap-2.5 mb-1">
                       <Heart className="w-4 h-4 text-taupe shrink-0 fill-taupe/20" />
-                      <span className="font-classico text-xs tracking-wider uppercase font-bold text-charcoal">
+                      <span className="text-sm font-bold text-charcoal">
                         Event Host
                       </span>
                     </div>
-                    <p className="text-[11px] text-charcoal/70 leading-snug">
+                    <p className="text-[11px] text-charcoal/70 leading-snug pr-4">
                       Planning a celebration (wedding, birthday, corporate)
                     </p>
                   </button>
@@ -125,19 +131,23 @@ export default function SignupPage() {
                   <button
                     type="button"
                     onClick={() => setUserRole('supplier')}
-                    className={`p-3.5 rounded-2xl border text-left transition-all relative overflow-hidden ${
-                      userRole === 'supplier'
-                        ? 'border-taupe bg-taupe/15 text-taupe font-semibold shadow-soft-sm'
+                    className={`p-3.5 rounded-2xl border text-left transition-all relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-taupe ${userRole === 'supplier'
+                        ? 'border-taupe bg-taupe/15 text-charcoal ring-1 ring-taupe shadow-soft-sm font-semibold'
                         : 'border-taupe/20 bg-sand text-charcoal/75 hover:border-taupe/40'
-                    }`}
+                      }`}
                   >
+                    {userRole === 'supplier' && (
+                      <span className="absolute top-3 right-3 w-4 h-4 rounded-full bg-taupe text-sand flex items-center justify-center text-[10px] shadow-sm">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </span>
+                    )}
                     <div className="flex items-center gap-2.5 mb-1">
                       <Store className="w-4 h-4 text-taupe shrink-0" />
-                      <span className="font-classico text-xs tracking-wider uppercase font-bold text-charcoal">
+                      <span className="text-sm font-bold text-charcoal">
                         Supplier Partner
                       </span>
                     </div>
-                    <p className="text-[11px] text-charcoal/70 leading-snug">
+                    <p className="text-[11px] text-charcoal/70 leading-snug pr-4">
                       Venue, Chef, DJ, Photo, Stylist...
                     </p>
                   </button>
@@ -145,7 +155,7 @@ export default function SignupPage() {
               </div>
 
               {/* Social Auth Buttons */}
-              <div className="space-y-3 mb-6">
+              <div className="mb-6">
                 <button
                   type="button"
                   onClick={handleSubmit}
@@ -159,17 +169,6 @@ export default function SignupPage() {
                   </svg>
                   <span>Sign Up with Google</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="w-full bg-charcoal text-sand hover:bg-charcoal/90 rounded-xl py-3 px-4 text-xs font-semibold flex items-center justify-center gap-3 transition-all shadow-soft-sm"
-                >
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.85c.66-.8 1.11-1.92.99-3.04-.96.04-2.13.64-2.82 1.44-.61.71-1.15 1.86-1 2.97 1.08.08 2.17-.56 2.83-1.37z" />
-                  </svg>
-                  <span>Sign Up with Apple</span>
-                </button>
               </div>
 
               {/* Divider */}
@@ -177,7 +176,7 @@ export default function SignupPage() {
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-taupe/20" />
                 </div>
-                <span className="relative bg-sand-50 px-3 text-[11px] font-classico uppercase tracking-wider text-charcoal/50">
+                <span className="relative bg-sand-50 px-3 text-xs text-charcoal/50">
                   Or sign up with email
                 </span>
               </div>
@@ -237,7 +236,7 @@ export default function SignupPage() {
 
                 <button
                   type="submit"
-                  className="w-full btn-primary py-3.5 text-xs font-classico tracking-[0.2em] uppercase font-semibold flex items-center justify-center gap-2 mt-4"
+                  className="w-full btn-primary py-3.5 text-sm font-semibold flex items-center justify-center gap-2 mt-4"
                 >
                   <Sparkles className="w-4 h-4 text-sand" />
                   <span>
@@ -248,21 +247,21 @@ export default function SignupPage() {
                 </button>
               </form>
 
-              <div className="text-center pt-6 border-t border-taupe/15 mt-6">
+              <div className="text-center pt-6 border-t border-taupe/15 mt-6 space-y-2">
                 <p className="text-[11px] text-charcoal/60 leading-relaxed">
                   Already have an account?{' '}
                   <Link href="/login" className="text-taupe underline font-semibold">
                     Sign In
                   </Link>
                 </p>
+                <p className="text-xs text-charcoal/40">
+                  © 2026 LEEMEVENTS • All Rights Reserved
+                </p>
               </div>
             </div>
           </div>
 
         </div>
-      </div>
-
-      <Footer />
     </main>
   );
 }

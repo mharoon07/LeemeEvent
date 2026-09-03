@@ -19,10 +19,10 @@ const FAQS = [
   },
   {
     q: 'Can I add or remove suppliers after submitting?',
-    a: 'Yes! Your dedicated LEEMEVENT matchmaker works with you to refine your selections until your final proposal matches your vision 100%.',
+    a: 'Yes! Your dedicated LEEMEVENTS matchmaker works with you to refine your selections until your final proposal matches your vision 100%.',
   },
   {
-    q: 'Is using LEEMEVENT free for event organizers?',
+    q: 'Is using LEEMEVENTS free for event organizers?',
     a: 'Submitting requests and receiving combined proposals is 100% free with no obligation to book. We handle all coordination at zero added markup.',
   },
 ];
@@ -54,7 +54,7 @@ export default function HowItWorksPage() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="font-classico text-4xl sm:text-6xl font-normal uppercase tracking-wide text-charcoal leading-tight"
           >
-            How <span className="font-serif-display lowercase italic font-normal text-taupe">LEEMEVENT works.</span>
+            How <span className="font-serif-display lowercase italic font-normal text-taupe">LEEMEVENTS works.</span>
           </motion.h1>
 
           <motion.p
@@ -98,9 +98,8 @@ export default function HowItWorksPage() {
                       {faq.q}
                     </span>
                     <ChevronDown
-                      className={`w-5 h-5 text-taupe transition-transform ${
-                        isOpen ? 'rotate-180' : ''
-                      }`}
+                      className={`w-5 h-5 text-taupe transition-transform ${isOpen ? 'rotate-180' : ''
+                        }`}
                     />
                   </div>
                   {isOpen && (

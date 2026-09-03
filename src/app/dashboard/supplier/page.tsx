@@ -68,7 +68,7 @@ export default function SupplierDashboardHome() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block font-semibold">
+              <span className="text-xs font-semibold text-taupe block">
                 Supplier Dashboard
               </span>
               <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -76,7 +76,7 @@ export default function SupplierDashboardHome() {
                 <span>Verified Partner</span>
               </span>
             </div>
-            <h1 className="font-classico text-3xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
               Aura Floral & Styling
             </h1>
           </div>
@@ -103,53 +103,53 @@ export default function SupplierDashboardHome() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-sand-50 border border-taupe/20 rounded-2xl p-5 space-y-2 shadow-soft-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-classico tracking-wider uppercase text-taupe font-semibold">
+              <span className="text-xs text-taupe font-semibold">
                 New Requests
               </span>
               <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
                 3
               </div>
             </div>
-            <div className="font-classico text-3xl font-bold text-charcoal">3 Pending</div>
-            <span className="text-[11px] text-charcoal/60 block">Requires response within 24h</span>
+            <div className="text-3xl font-bold text-charcoal">3 Pending</div>
+            <span className="text-xs text-charcoal/60 block">Requires response within 24h</span>
           </div>
 
           <div className="bg-sand-50 border border-taupe/20 rounded-2xl p-5 space-y-2 shadow-soft-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-classico tracking-wider uppercase text-taupe font-semibold">
+              <span className="text-xs text-taupe font-semibold">
                 Confirmed Bookings
               </span>
               <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
                 4
               </div>
             </div>
-            <div className="font-classico text-3xl font-bold text-charcoal">4 Confirmed</div>
-            <span className="text-[11px] text-emerald-700 font-semibold block">100% calendar synced</span>
+            <div className="text-3xl font-bold text-charcoal">4 Confirmed</div>
+            <span className="text-xs text-emerald-700 font-semibold block">100% calendar synced</span>
           </div>
 
           <div className="bg-sand-50 border border-taupe/20 rounded-2xl p-5 space-y-2 shadow-soft-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-classico tracking-wider uppercase text-taupe font-semibold">
+              <span className="text-xs text-taupe font-semibold">
                 Est. Monthly Revenue
               </span>
               <div className="w-8 h-8 rounded-xl bg-taupe/15 text-taupe flex items-center justify-center font-bold text-xs">
                 $
               </div>
             </div>
-            <div className="font-classico text-3xl font-bold text-taupe">$12,400</div>
-            <span className="text-[11px] text-charcoal/60 block">Sept 2026 pipeline</span>
+            <div className="text-3xl font-bold text-taupe font-mono">$12,400</div>
+            <span className="text-xs text-charcoal/60 block">Sept 2026 pipeline</span>
           </div>
 
           <div className="bg-sand-50 border border-taupe/20 rounded-2xl p-5 space-y-2 shadow-soft-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-classico tracking-wider uppercase text-taupe font-semibold">
+              <span className="text-xs text-taupe font-semibold">
                 Profile Completeness
               </span>
               <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-xs">
                 95%
               </div>
             </div>
-            <div className="font-classico text-3xl font-bold text-charcoal">95% Complete</div>
+            <div className="text-3xl font-bold text-charcoal">95% Complete</div>
             <div className="w-full h-1.5 bg-taupe/15 rounded-full overflow-hidden mt-1">
               <div className="h-full bg-taupe w-[95%]" />
             </div>
@@ -159,12 +159,12 @@ export default function SupplierDashboardHome() {
         {/* INCOMING REQUESTS (ACCEPT / DECLINE QUEUE) */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-classico text-2xl uppercase font-normal text-charcoal tracking-wide">
+            <h2 className="text-xl font-bold text-charcoal">
               Incoming Booking Requests
             </h2>
             <Link
               href="/dashboard/supplier/requests"
-              className="text-xs font-classico tracking-widest uppercase text-taupe hover:underline font-semibold flex items-center gap-1"
+              className="text-xs text-taupe hover:underline font-semibold flex items-center gap-1"
             >
               <span>View All Requests</span>
               <ChevronRight className="w-4 h-4" />

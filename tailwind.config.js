@@ -43,9 +43,9 @@ module.exports = {
         }
       },
       fontFamily: {
-        classico: ['var(--font-classico)', 'Tenor Sans', 'Marcellus', 'Cinzel', 'sans-serif'],
-        serif: ['var(--font-cormorant)', 'Playfair Display', 'Georgia', 'serif'],
-        sans: ['var(--font-plus-jakarta)', 'Inter', 'sans-serif'],
+        classico: ['"Plus Jakarta Sans"', 'var(--font-plus-jakarta)', 'Inter', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        serif: ['"Plus Jakarta Sans"', 'var(--font-plus-jakarta)', 'Inter', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'var(--font-plus-jakarta)', 'Inter', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
       },
       boxShadow: {
         'soft-sm': '0 2px 10px rgba(40, 35, 29, 0.04)',

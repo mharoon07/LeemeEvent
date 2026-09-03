@@ -17,7 +17,7 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
 
   const heroNavLinks = [
     { num: '01', name: 'HOME', href: '/' },
-    { num: '02', name: 'WHY LEEMEVENT', href: '/why-us' },
+    { num: '02', name: 'WHY LEEMEVENTS', href: '/why-us' },
     { num: '03', name: 'HOW IT WORKS', href: '/how-it-works' },
     { num: '04', name: 'SUPPLIERS', href: '/categories' },
     { num: '05', name: 'ABOUT US', href: '/about' },
@@ -27,7 +27,7 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
     <section id="home" className="relative z-20 min-h-screen pt-12 sm:pt-16 lg:pt-20 pb-16 flex items-center bg-stone-linen">
       {/* Background Decorative Blur & Warm Earth Gradients */}
       <div className="absolute inset-0 bg-sand/60 z-0 overflow-hidden pointer-events-none" />
-      
+
       {/* Background Subtle Organic Image Layer */}
       <div className="absolute inset-0 z-0 opacity-15 pointer-events-none mix-blend-multiply overflow-hidden">
         <Image
@@ -40,7 +40,7 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
       </div>
 
       <div className="relative z-10 w-full flex flex-col lg:flex-row items-center lg:items-start justify-between">
-        
+
         {/* LEFT VERTICAL NAVBAR PANEL (Flush to extreme left edge of screen) */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
@@ -55,9 +55,9 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
             </div>
             <div>
               <span className="font-classico text-2xl font-normal tracking-[0.2em] uppercase text-charcoal block">
-                LEEMEVENT
+                LEEMEVENTS
               </span>
-               
+
             </div>
           </div>
 
@@ -72,11 +72,10 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`group font-classico text-xs uppercase tracking-[0.25em] transition-all flex items-center justify-between py-2 border-b border-taupe/10 ${
-                    isActive
+                  className={`group font-classico text-xs uppercase tracking-[0.25em] transition-all flex items-center justify-between py-2 border-b border-taupe/10 ${isActive
                       ? 'text-taupe font-semibold pl-2 border-l-2 border-taupe border-b-taupe/30'
                       : 'text-charcoal/75 hover:text-taupe hover:pl-1 font-normal'
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-2">
                     <span className="text-[10px] text-taupe/60 font-mono">{link.num}.</span>

@@ -13,7 +13,7 @@ const TESTIMONIALS = [
     location: 'Cotswolds / Oxford',
     rating: 5,
     quote:
-      'LEEMEVENT’s combined request system was a lifesaver for our wedding. Within 24 hours, our dream venue, photographer, and caterer were perfectly synchronized. Zero stress, just 1 clear dashboard!',
+      'LEEMEVENTS’s combined request system was a lifesaver for our wedding. Within 24 hours, our dream venue, photographer, and caterer were perfectly synchronized. Zero stress, just 1 clear dashboard!',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
     suppliersBooked: 'Venue, Photographer, Live Band & Catering',
   },
@@ -24,7 +24,7 @@ const TESTIMONIALS = [
     location: 'Downtown Manhattan',
     rating: 5,
     quote:
-      'I wanted a chic dinner party with a mixologist and live DJ for 60 guests. With 1 request on LEEMEVENT, everything was lined up seamlessly. My guests are still talking about it!',
+      'I wanted a chic dinner party with a mixologist and live DJ for 60 guests. With 1 request on LEEMEVENTS, everything was lined up seamlessly. My guests are still talking about it!',
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400&auto=format&fit=crop',
     suppliersBooked: 'Rooftop Venue, Mixologist, DJ & Styling',
   },
@@ -35,7 +35,7 @@ const TESTIMONIALS = [
     location: 'San Francisco',
     rating: 5,
     quote:
-      'Professional, transparent, and remarkably fast. As an event director, LEEMEVENT saved me weeks of back-and-forth email tag. Centralized billing made our accounting completely painless.',
+      'Professional, transparent, and remarkably fast. As an event director, LEEMEVENTS saved me weeks of back-and-forth email tag. Centralized billing made our accounting completely painless.',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop',
     suppliersBooked: 'Industrial Space, AV/Lighting, Catering & Staff',
   },
@@ -80,11 +80,10 @@ export default function Testimonials() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 onClick={() => setCurrentIndex(index)}
-                className={`cursor-pointer bg-sand-50/90 border rounded-3xl p-8 shadow-soft-sm transition-all duration-300 flex flex-col justify-between relative ${
-                  isActive
+                className={`cursor-pointer bg-sand-50/90 border rounded-3xl p-8 shadow-soft-sm transition-all duration-300 flex flex-col justify-between relative ${isActive
                     ? 'border-taupe shadow-soft-lg scale-[1.02] bg-sand-100/90'
                     : 'border-taupe/20 opacity-80 hover:opacity-100 hover:border-taupe/40'
-                }`}
+                  }`}
               >
                 <div>
                   {/* Quote Icon & Rating Stars */}
@@ -145,9 +144,8 @@ export default function Testimonials() {
               <button
                 key={i}
                 onClick={() => setCurrentIndex(i)}
-                className={`h-2 rounded-full transition-all ${
-                  i === currentIndex ? 'w-8 bg-taupe' : 'w-2 bg-taupe/30'
-                }`}
+                className={`h-2 rounded-full transition-all ${i === currentIndex ? 'w-8 bg-taupe' : 'w-2 bg-taupe/30'
+                  }`}
                 aria-label={`Go to slide ${i + 1}`}
               />
             ))}

@@ -13,31 +13,46 @@ import {
   ChevronRight,
   ChevronLeft,
   Compass,
+  Heart,
+  Cake,
+  Briefcase,
+  Baby,
+  Building2,
+  Utensils,
+  Camera,
+  Video,
+  Flower2,
+  Shirt,
+  Headphones,
+  ClipboardCheck,
+  Armchair,
+  Gift,
+  Aperture,
 } from 'lucide-react';
 
 const EVENT_TYPES = [
-  { id: 'wedding', label: 'Wedding', icon: '💍', desc: 'Ceremony, reception & bridal party' },
-  { id: 'birthday', label: 'Birthday Celebration', icon: '🎉', desc: 'Milestone party & dinner' },
-  { id: 'corporate', label: 'Corporate Gala / Event', icon: '🍸', desc: 'Company retreat or product launch' },
-  { id: 'babyshower', label: 'Baby Shower / Gender Reveal', icon: '🧸', desc: 'Intimate family gathering' },
-  { id: 'other', label: 'Other Special Celebration', icon: '✨', desc: 'Anniversary, engagement, or party' },
+  { id: 'wedding', label: 'Wedding', icon: Heart, desc: 'Ceremony, reception & bridal party' },
+  { id: 'birthday', label: 'Birthday Celebration', icon: Cake, desc: 'Milestone party & dinner' },
+  { id: 'corporate', label: 'Corporate Gala / Event', icon: Briefcase, desc: 'Company retreat or product launch' },
+  { id: 'babyshower', label: 'Baby Shower / Gender Reveal', icon: Baby, desc: 'Intimate family gathering' },
+  { id: 'other', label: 'Other Special Celebration', icon: Sparkles, desc: 'Anniversary, engagement, or party' },
 ];
 
 const SERVICES_CHECKLIST = [
-  { id: 'venue', label: 'Venue & Location', icon: '🏰' },
-  { id: 'catering', label: 'Catering & Food Trucks', icon: '🍽️' },
-  { id: 'photography', label: 'Photography', icon: '📸' },
-  { id: 'videography', label: 'Videography', icon: '🎥' },
-  { id: 'decor', label: 'Floral & Decor Design', icon: '💐' },
-  { id: 'dress', label: 'Bridal Gowns & Suits', icon: '👗' },
-  { id: 'makeup', label: 'Hair & Makeup Styling', icon: '💄' },
-  { id: 'dj', label: 'DJ, Music & Sound', icon: '🎧' },
-  { id: 'planner', label: 'Wedding & Event Planner', icon: '📋' },
-  { id: 'nanny', label: 'Kids Corner & Nanny Service', icon: '👶' },
-  { id: 'rentals', label: 'Tables, Chairs & Furniture Rentals', icon: '🪑' },
-  { id: 'cake', label: 'Wedding Cake & Dessert Spread', icon: '🎂' },
-  { id: 'favors', label: 'Artisan Favors & Gifting', icon: '🎁' },
-  { id: 'photoshoot', label: 'Photoshoot Location Hire', icon: '🏛️' },
+  { id: 'venue', label: 'Venue & Location', icon: Building2 },
+  { id: 'catering', label: 'Catering & Food Trucks', icon: Utensils },
+  { id: 'photography', label: 'Photography', icon: Camera },
+  { id: 'videography', label: 'Videography', icon: Video },
+  { id: 'decor', label: 'Floral & Decor Design', icon: Flower2 },
+  { id: 'dress', label: 'Bridal Gowns & Suits', icon: Shirt },
+  { id: 'makeup', label: 'Hair & Makeup Styling', icon: Sparkles },
+  { id: 'dj', label: 'DJ, Music & Sound', icon: Headphones },
+  { id: 'planner', label: 'Wedding & Event Planner', icon: ClipboardCheck },
+  { id: 'nanny', label: 'Kids Corner & Nanny Service', icon: Baby },
+  { id: 'rentals', label: 'Tables, Chairs & Furniture Rentals', icon: Armchair },
+  { id: 'cake', label: 'Wedding Cake & Dessert Spread', icon: Cake },
+  { id: 'favors', label: 'Artisan Favors & Gifting', icon: Gift },
+  { id: 'photoshoot', label: 'Photoshoot Location Hire', icon: Aperture },
 ];
 
 export default function HostOnboardingPage() {
@@ -77,11 +92,11 @@ export default function HostOnboardingPage() {
       <header className="max-w-4xl mx-auto w-full flex items-center justify-between py-4">
         <div className="flex items-center gap-2">
           <Compass className="w-6 h-6 text-taupe stroke-[1.5]" />
-          <span className="font-classico text-xl font-normal tracking-[0.2em] uppercase text-charcoal">
-            LEEMEVENT
+          <span className="text-xl font-bold text-charcoal tracking-normal">
+            LEEMEVENTS
           </span>
         </div>
-        <div className="text-xs font-classico tracking-wider uppercase text-taupe font-semibold">
+        <div className="text-xs text-taupe font-semibold">
           Host Onboarding — Step {step} of 5
         </div>
       </header>
@@ -99,7 +114,7 @@ export default function HostOnboardingPage() {
       {/* Main Card */}
       <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col justify-center">
         <div className="bg-sand-50 border border-taupe/20 rounded-3xl p-6 sm:p-10 shadow-soft-lg relative overflow-hidden">
-          
+
           <AnimatePresence mode="wait">
             {/* STEP 1: EVENT TYPE */}
             {step === 1 && (
@@ -111,37 +126,42 @@ export default function HostOnboardingPage() {
                 className="space-y-6"
               >
                 <div>
-                  <span className="text-xs font-classico tracking-[0.2em] uppercase text-taupe block font-semibold mb-1">
+                  <span className="text-xs font-semibold text-taupe block mb-1">
                     Step 1 of 5
                   </span>
-                  <h1 className="font-classico text-2xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     What are you organizing?
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-1">
-                    Select the type of event you are planning on LEEMEVENT.
+                    Select the type of event you are planning on LEEMEVENTS.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
                   {EVENT_TYPES.map((type) => {
                     const isSelected = onboardingData.eventType === type.id;
+                    const IconComponent = type.icon;
                     return (
                       <button
                         key={type.id}
                         type="button"
                         onClick={() => setOnboardingData({ ...onboardingData, eventType: type.id })}
-                        className={`p-4 rounded-2xl border text-left transition-all flex items-start gap-3.5 ${
-                          isSelected
-                            ? 'border-taupe bg-taupe/15 text-charcoal shadow-soft-sm font-semibold'
-                            : 'border-taupe/20 bg-sand text-charcoal/80 hover:border-taupe/40'
-                        }`}
+                        className={`p-4 rounded-2xl border text-left transition-all flex items-start gap-4 group ${isSelected
+                            ? 'border-taupe bg-taupe/15 text-charcoal shadow-soft-sm font-semibold ring-1 ring-taupe'
+                            : 'border-taupe/20 bg-sand text-charcoal/80 hover:border-taupe/40 hover:bg-sand-100'
+                          }`}
                       >
-                        <span className="text-2xl">{type.icon}</span>
-                        <div>
-                          <span className="font-classico text-sm uppercase tracking-wider block font-bold text-charcoal">
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all ${isSelected
+                            ? 'bg-taupe text-sand shadow-sm'
+                            : 'bg-taupe/10 text-taupe group-hover:bg-taupe/20'
+                          }`}>
+                          <IconComponent className="w-5 h-5 stroke-[1.75]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-bold text-charcoal block">
                             {type.label}
                           </span>
-                          <span className="text-xs text-charcoal/60 font-sans block mt-0.5">
+                          <span className="text-xs text-charcoal/60 font-sans block mt-0.5 leading-relaxed">
                             {type.desc}
                           </span>
                         </div>
@@ -162,10 +182,10 @@ export default function HostOnboardingPage() {
                 className="space-y-6"
               >
                 <div>
-                  <span className="text-xs font-classico tracking-[0.2em] uppercase text-taupe block font-semibold mb-1">
+                  <span className="text-xs font-semibold text-taupe block mb-1">
                     Step 2 of 5
                   </span>
-                  <h1 className="font-classico text-2xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     When is the event?
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-1">
@@ -195,7 +215,7 @@ export default function HostOnboardingPage() {
                       onChange={(e) => setOnboardingData({ ...onboardingData, noDateYet: e.target.checked })}
                       className="rounded accent-taupe w-4 h-4"
                     />
-                    <span className="text-xs font-classico tracking-wider uppercase font-semibold text-charcoal">
+                    <span className="text-xs font-medium text-charcoal">
                       I don&apos;t have a firm date yet (Flexible Timeline)
                     </span>
                   </label>
@@ -213,10 +233,10 @@ export default function HostOnboardingPage() {
                 className="space-y-6"
               >
                 <div>
-                  <span className="text-xs font-classico tracking-[0.2em] uppercase text-taupe block font-semibold mb-1">
+                  <span className="text-xs font-semibold text-taupe block mb-1">
                     Step 3 of 5
                   </span>
-                  <h1 className="font-classico text-2xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     Where is your celebration located?
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-1">
@@ -262,10 +282,10 @@ export default function HostOnboardingPage() {
                 className="space-y-6"
               >
                 <div>
-                  <span className="text-xs font-classico tracking-[0.2em] uppercase text-taupe block font-semibold mb-1">
+                  <span className="text-xs font-semibold text-taupe block mb-1">
                     Step 4 of 5
                   </span>
-                  <h1 className="font-classico text-2xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     Estimated Guest Count
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-1">
@@ -277,9 +297,9 @@ export default function HostOnboardingPage() {
                   <div className="flex items-center justify-between bg-sand border border-taupe/20 p-4 rounded-2xl">
                     <div className="flex items-center gap-3">
                       <Users className="w-6 h-6 text-taupe" />
-                      <span className="text-xs font-classico tracking-wider uppercase font-semibold text-charcoal">Guests</span>
+                      <span className="text-xs font-semibold text-charcoal">Guests</span>
                     </div>
-                    <span className="font-classico text-3xl font-bold text-taupe">
+                    <span className="text-3xl font-bold text-taupe font-mono">
                       {onboardingData.guestCount}
                     </span>
                   </div>
@@ -313,10 +333,10 @@ export default function HostOnboardingPage() {
                 className="space-y-6"
               >
                 <div>
-                  <span className="text-xs font-classico tracking-[0.2em] uppercase text-taupe block font-semibold mb-1">
+                  <span className="text-xs font-semibold text-taupe block mb-1">
                     Step 5 of 5
                   </span>
-                  <h1 className="font-classico text-2xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     Which services do you need?
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-1">
@@ -327,20 +347,25 @@ export default function HostOnboardingPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2 max-h-[360px] overflow-y-auto pr-1">
                   {SERVICES_CHECKLIST.map((service) => {
                     const isSelected = onboardingData.selectedServices.includes(service.id);
+                    const IconComponent = service.icon;
                     return (
                       <button
                         key={service.id}
                         type="button"
                         onClick={() => toggleService(service.id)}
-                        className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between ${
-                          isSelected
-                            ? 'border-taupe bg-taupe/15 text-taupe font-semibold shadow-soft-sm'
+                        className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between group ${isSelected
+                            ? 'border-taupe bg-taupe/15 text-taupe font-semibold shadow-soft-sm ring-1 ring-taupe'
                             : 'border-taupe/20 bg-sand text-charcoal/80 hover:border-taupe/40'
-                        }`}
+                          }`}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-lg">{service.icon}</span>
-                          <span className="font-classico text-xs tracking-wider uppercase font-bold text-charcoal truncate">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all ${isSelected
+                              ? 'bg-taupe text-sand shadow-sm'
+                              : 'bg-taupe/10 text-taupe group-hover:bg-taupe/20'
+                            }`}>
+                            <IconComponent className="w-4 h-4 stroke-[1.75]" />
+                          </div>
+                          <span className="text-xs font-semibold text-charcoal truncate">
                             {service.label}
                           </span>
                         </div>
@@ -381,7 +406,7 @@ export default function HostOnboardingPage() {
               <button
                 type="button"
                 onClick={handleFinish}
-                className="btn-primary px-8 py-3 text-xs font-classico tracking-[0.2em] uppercase flex items-center gap-2"
+                className="btn-primary px-8 py-3 text-sm font-semibold flex items-center gap-2"
               >
                 <Sparkles className="w-4 h-4 text-sand" />
                 <span>Create Event & Enter Dashboard</span>
@@ -392,8 +417,8 @@ export default function HostOnboardingPage() {
         </div>
       </div>
 
-      <footer className="text-center py-4 text-xs font-classico tracking-widest text-charcoal/50 uppercase">
-        © 2026 LEEMEVENT • All Rights Reserved
+      <footer className="text-center py-4 text-xs text-charcoal/50">
+        © 2026 LEEMEVENTS • All Rights Reserved
       </footer>
     </main>
   );

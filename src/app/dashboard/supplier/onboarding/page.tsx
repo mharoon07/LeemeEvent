@@ -103,11 +103,11 @@ export default function SupplierOnboardingPage() {
       <header className="max-w-4xl mx-auto w-full flex items-center justify-between py-4">
         <div className="flex items-center gap-2">
           <Compass className="w-6 h-6 text-taupe stroke-[1.5]" />
-          <span className="font-classico text-xl font-normal tracking-[0.2em] uppercase text-charcoal">
-            LEEMEVENT Partner Onboarding
+          <span className="text-xl font-bold tracking-normal text-charcoal">
+            LEEMEVENTS Partner Onboarding
           </span>
         </div>
-        <div className="text-xs font-classico tracking-wider uppercase text-taupe font-semibold">
+        <div className="text-xs text-taupe font-semibold">
           {step < 6 ? `Step ${step} of 5` : 'Verification Review'}
         </div>
       </header>
@@ -127,7 +127,7 @@ export default function SupplierOnboardingPage() {
       {/* Main Content Box */}
       <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col justify-center">
         <div className="bg-sand-50 border border-taupe/20 rounded-3xl p-6 sm:p-10 shadow-soft-lg relative overflow-hidden">
-          
+
           <AnimatePresence mode="wait">
             {/* STEP 1: BUSINESS NAME & CATEGORY */}
             {step === 1 && (
@@ -139,10 +139,10 @@ export default function SupplierOnboardingPage() {
                 className="space-y-6"
               >
                 <div>
-                  <span className="text-xs font-classico tracking-[0.2em] uppercase text-taupe block font-semibold mb-1">
+                  <span className="text-xs font-semibold text-taupe block mb-1">
                     Step 1 of 5
                   </span>
-                  <h1 className="font-classico text-2xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     Business Profile & Service Category
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-1">
@@ -194,10 +194,10 @@ export default function SupplierOnboardingPage() {
                 className="space-y-6"
               >
                 <div>
-                  <span className="text-xs font-classico tracking-[0.2em] uppercase text-taupe block font-semibold mb-1">
+                  <span className="text-xs font-semibold text-taupe block mb-1">
                     Step 2 of 5
                   </span>
-                  <h1 className="font-classico text-2xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     Location & Service Region
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-1">
@@ -233,10 +233,10 @@ export default function SupplierOnboardingPage() {
                 className="space-y-6"
               >
                 <div>
-                  <span className="text-xs font-classico tracking-[0.2em] uppercase text-taupe block font-semibold mb-1">
+                  <span className="text-xs font-semibold text-taupe block mb-1">
                     Step 3 of 5
                   </span>
-                  <h1 className="font-classico text-2xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     Portfolio & Logo Showcase
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-1">
@@ -263,7 +263,7 @@ export default function SupplierOnboardingPage() {
                     className="w-full border-2 border-dashed border-taupe/30 hover:border-taupe rounded-2xl p-6 text-center space-y-2 bg-sand hover:bg-sand-100 transition-colors"
                   >
                     <Upload className="w-6 h-6 text-taupe mx-auto" />
-                    <span className="text-xs font-classico tracking-wider uppercase font-semibold text-charcoal block">
+                    <span className="text-xs font-semibold text-charcoal block">
                       + Add More High-Resolution Photos
                     </span>
                   </button>
@@ -281,10 +281,10 @@ export default function SupplierOnboardingPage() {
                 className="space-y-6"
               >
                 <div>
-                  <span className="text-xs font-classico tracking-[0.2em] uppercase text-taupe block font-semibold mb-1">
+                  <span className="text-xs font-semibold text-taupe block mb-1">
                     Step 4 of 5
                   </span>
-                  <h1 className="font-classico text-2xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     Services & Package Pricing
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-1">
@@ -297,7 +297,7 @@ export default function SupplierOnboardingPage() {
                   {onboardingData.services.map((item, index) => (
                     <div key={index} className="bg-sand border border-taupe/20 p-4 rounded-2xl flex items-center justify-between gap-4">
                       <div>
-                        <h4 className="font-classico text-sm uppercase font-bold text-charcoal">{item.name}</h4>
+                        <h4 className="text-sm font-bold text-charcoal">{item.name}</h4>
                         <p className="text-xs text-charcoal/70">{item.desc}</p>
                         <span className="font-mono text-xs font-bold text-taupe block mt-1">
                           ${item.price} ({item.unit})
@@ -315,7 +315,7 @@ export default function SupplierOnboardingPage() {
 
                   {/* Add New Line Item Box */}
                   <div className="bg-sand-100 border border-taupe/20 p-4 rounded-2xl space-y-3">
-                    <span className="text-xs font-classico tracking-wider uppercase font-semibold text-taupe block">
+                    <span className="text-xs font-semibold text-taupe block">
                       + Add New Service Item
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -373,10 +373,10 @@ export default function SupplierOnboardingPage() {
                 className="space-y-6"
               >
                 <div>
-                  <span className="text-xs font-classico tracking-[0.2em] uppercase text-taupe block font-semibold mb-1">
+                  <span className="text-xs font-semibold text-taupe block mb-1">
                     Step 5 of 5
                   </span>
-                  <h1 className="font-classico text-2xl sm:text-4xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     Availability & Calendar Blackouts
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-1">
@@ -405,11 +405,10 @@ export default function SupplierOnboardingPage() {
                                   : [...prev.workingDays, day],
                               }));
                             }}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-classico tracking-wider uppercase font-semibold transition-all ${
-                              isWorking
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isWorking
                                 ? 'bg-charcoal text-sand shadow-soft-sm'
                                 : 'bg-sand border border-taupe/20 text-charcoal/60'
-                            }`}
+                              }`}
                           >
                             {day}
                           </button>
@@ -434,14 +433,14 @@ export default function SupplierOnboardingPage() {
                 </div>
 
                 <div>
-                  <span className="px-3 py-1 rounded-full text-xs font-classico tracking-[0.2em] uppercase font-bold bg-amber-100 text-amber-800 inline-block mb-3">
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 inline-block mb-3">
                     Status: Pending Admin Approval
                   </span>
-                  <h1 className="font-classico text-3xl font-normal uppercase tracking-wide text-charcoal">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
                     Application Submitted for Vetting
                   </h1>
                   <p className="text-xs sm:text-sm text-charcoal/70 mt-3 leading-relaxed font-sans">
-                    Thank you for applying to join LEEMEVENT as a verified partner! Our concierge team is reviewing <strong>{onboardingData.businessName}</strong> ({onboardingData.category}). Approval typically takes under 24 hours.
+                    Thank you for applying to join LEEMEVENTS as a verified partner! Our concierge team is reviewing <strong>{onboardingData.businessName}</strong> ({onboardingData.category}). Approval typically takes under 24 hours.
                   </p>
                 </div>
 
@@ -466,13 +465,13 @@ export default function SupplierOnboardingPage() {
                   <button
                     type="button"
                     onClick={handleBypassApprovalForDemo}
-                    className="btn-primary px-8 py-3.5 text-xs font-classico tracking-[0.2em] uppercase font-semibold inline-flex items-center gap-2"
+                    className="btn-primary px-8 py-3.5 text-sm font-semibold inline-flex items-center gap-2"
                   >
                     <ShieldCheck className="w-4 h-4 text-sand" />
                     <span>Simulate Admin Approval & Access Dashboard</span>
                   </button>
-                  <p className="text-[10px] text-charcoal/50 italic">
-                    (Clicking above simulates instant LEEMEVENT admin verification for demonstration)
+                  <p className="text-xs text-charcoal/50 italic">
+                    (Clicking above simulates instant LEEMEVENTS admin verification for demonstration)
                   </p>
                 </div>
               </motion.div>
@@ -508,7 +507,7 @@ export default function SupplierOnboardingPage() {
                 <button
                   type="button"
                   onClick={handleFinishSubmit}
-                  className="btn-primary px-8 py-3 text-xs font-classico tracking-[0.2em] uppercase flex items-center gap-2"
+                  className="btn-primary px-8 py-3 text-sm font-semibold flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4 text-sand" />
                   <span>Submit for Admin Approval</span>
@@ -520,8 +519,8 @@ export default function SupplierOnboardingPage() {
         </div>
       </div>
 
-      <footer className="text-center py-4 text-xs font-classico tracking-widest text-charcoal/50 uppercase">
-        © 2026 LEEMEVENT Partner Program
+      <footer className="text-center py-4 text-xs text-charcoal/50">
+        © 2026 LEEMEVENTS Partner Program
       </footer>
     </main>
   );

@@ -74,7 +74,7 @@ export default function CategoriesPage() {
             </div>
             <div className="bg-sand border border-taupe/20 rounded-2xl p-6">
               <h3 className="font-classico text-lg uppercase tracking-wider font-semibold text-charcoal mb-2">2. Authentic Reviews</h3>
-              <p className="text-xs text-charcoal/75">Reviews on LEEMEVENT come exclusively from verified clients who completed bookings.</p>
+              <p className="text-xs text-charcoal/75">Reviews on LEEMEVENTS come exclusively from verified clients who completed bookings.</p>
             </div>
             <div className="bg-sand border border-taupe/20 rounded-2xl p-6">
               <h3 className="font-classico text-lg uppercase tracking-wider font-semibold text-charcoal mb-2">3. Calendar Sync</h3>

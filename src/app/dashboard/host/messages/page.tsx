@@ -46,19 +46,19 @@ export default function HostMessagesPage() {
     <HostLayout>
       <div className="space-y-6">
         <div>
-          <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block font-semibold">
+          <span className="text-xs font-semibold text-taupe block">
             Communication Hub
           </span>
-          <h1 className="font-classico text-3xl font-normal uppercase tracking-wide text-charcoal mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
             Supplier Messages
           </h1>
         </div>
 
-        <div className="bg-sand-50 border border-taupe/20 rounded-3xl overflow-hidden shadow-soft-sm grid grid-cols-1 lg:grid-cols-12 min-h-[540px]">
+        <div className="bg-white border border-stone-200/90 rounded-3xl overflow-hidden shadow-soft-sm grid grid-cols-1 lg:grid-cols-12 min-h-[540px]">
           
           {/* Thread List Column */}
-          <div className="lg:col-span-4 border-r border-taupe/15 bg-sand-100/50 p-4 space-y-3">
-            <span className="text-xs font-classico tracking-wider uppercase text-taupe font-semibold block px-2">
+          <div className="lg:col-span-4 border-r border-stone-200/80 bg-[#FAF8F5] p-4 space-y-3">
+            <span className="text-xs font-semibold text-taupe uppercase tracking-wider block px-2">
               Active Conversations
             </span>
 
@@ -69,21 +69,21 @@ export default function HostMessagesPage() {
                 onClick={() => setActiveChat(chat.id)}
                 className={`w-full p-3 rounded-2xl text-left transition-all flex items-center gap-3 ${
                   activeChat === chat.id
-                    ? 'bg-sand text-charcoal shadow-soft-sm border border-taupe/30'
-                    : 'hover:bg-taupe/10 text-charcoal/80'
+                    ? 'bg-white text-charcoal shadow-soft-sm border border-stone-200/90 font-semibold'
+                    : 'hover:bg-white/60 text-stone-700'
                 }`}
               >
-                <div className="relative h-11 w-11 rounded-full overflow-hidden shrink-0">
+                <div className="relative h-11 w-11 rounded-full overflow-hidden shrink-0 shadow-sm">
                   <Image src={chat.avatar} alt={chat.name} fill className="object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-classico text-sm uppercase font-semibold text-charcoal truncate">
+                    <h4 className="text-sm font-bold text-charcoal truncate">
                       {chat.name}
                     </h4>
-                    <span className="text-[10px] text-charcoal/50">{chat.time}</span>
+                    <span className="text-[10px] text-stone-400">{chat.time}</span>
                   </div>
-                  <p className="text-xs text-charcoal/70 truncate mt-0.5 font-sans">
+                  <p className="text-xs text-stone-500 truncate mt-0.5">
                     {chat.lastMessage}
                   </p>
                 </div>
@@ -92,17 +92,18 @@ export default function HostMessagesPage() {
           </div>
 
           {/* Chat Window Column */}
-          <div className="lg:col-span-8 flex flex-col justify-between p-6 bg-sand-50">
+          <div className="lg:col-span-8 flex flex-col justify-between p-6 bg-white">
             {/* Chat Header */}
-            <div className="pb-4 border-b border-taupe/15 flex items-center justify-between">
+            <div className="pb-4 border-b border-stone-100 flex items-center justify-between">
               <div>
-                <h3 className="font-classico text-lg uppercase font-semibold text-charcoal">
+                <h3 className="text-lg font-bold text-charcoal tracking-tight">
                   Château de Bellevue Venue
                 </h3>
-                <span className="text-xs text-taupe font-semibold">Assigned Account Representative</span>
+                <span className="text-xs text-taupe font-medium">Assigned Account Representative</span>
               </div>
-              <span className="px-3 py-1 rounded-full text-xs bg-emerald-100 text-emerald-800 font-bold">
-                Online
+              <span className="px-3 py-1 rounded-full text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Online</span>
               </span>
             </div>
 
@@ -114,16 +115,16 @@ export default function HostMessagesPage() {
                   className={`flex ${m.sender === 'host' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-md p-4 rounded-2xl text-xs sm:text-sm font-sans space-y-1 ${
+                    className={`max-w-md p-4 rounded-2xl text-xs sm:text-sm space-y-1 ${
                       m.sender === 'host'
-                        ? 'bg-taupe text-sand rounded-br-none'
-                        : 'bg-sand border border-taupe/20 text-charcoal rounded-bl-none shadow-soft-sm'
+                        ? 'bg-charcoal text-white rounded-br-none shadow-soft-sm'
+                        : 'bg-[#FAF8F5] border border-stone-200/80 text-charcoal rounded-bl-none shadow-sm'
                     }`}
                   >
                     <p>{m.text}</p>
                     <span
                       className={`text-[10px] block text-right ${
-                        m.sender === 'host' ? 'text-sand/70' : 'text-charcoal/50'
+                        m.sender === 'host' ? 'text-stone-300' : 'text-stone-400'
                       }`}
                     >
                       {m.time}
@@ -133,21 +134,23 @@ export default function HostMessagesPage() {
               ))}
             </div>
 
-            {/* Input Bar */}
-            <form onSubmit={handleSend} className="pt-4 border-t border-taupe/15 flex items-center gap-3">
+            {/* Message Input */}
+            <form onSubmit={handleSend} className="pt-4 border-t border-stone-100 flex items-center gap-3">
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Type your message to vendor..."
-                className="flex-1 bg-sand border border-taupe/20 rounded-2xl px-4 py-3 text-sm text-charcoal focus:outline-none focus:border-taupe"
+                placeholder="Type your message to Château de Bellevue..."
+                className="flex-1 bg-[#FAF8F5] border border-stone-200/90 rounded-xl px-4 py-3 text-sm text-charcoal focus:outline-none focus:border-taupe"
               />
-              <button type="submit" className="btn-primary p-3 rounded-2xl shrink-0">
-                <Send className="w-4 h-4 text-sand" />
+              <button
+                type="submit"
+                className="btn-primary p-3 rounded-xl flex items-center justify-center shadow-soft-sm"
+              >
+                <Send className="w-4 h-4 text-white" />
               </button>
             </form>
           </div>
-
         </div>
       </div>
     </HostLayout>

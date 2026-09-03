@@ -19,8 +19,9 @@ import {
   Menu,
   X,
   Compass,
-  ChevronDown,
-  Plus,
+  Bell,
+  ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
 
 interface HostLayoutProps {
@@ -45,54 +46,45 @@ export default function HostLayout({ children }: HostLayoutProps) {
     { name: 'Profile & Settings', href: '/dashboard/host/settings', icon: Settings },
   ];
 
+  const currentNav = navItems.find((item) => item.href === pathname) || {
+    name: pathname.includes('/events') ? 'My Events' : 'Host Portal',
+  };
+
   const handleLogout = () => {
     logout();
     router.push('/login');
   };
 
   return (
-    <div className="min-h-screen bg-sand text-charcoal flex flex-col lg:flex-row font-sans selection:bg-taupe selection:text-sand">
-      {/* DESKTOP SIDEBAR */}
-      <aside className="hidden lg:flex w-72 shrink-0 bg-sand-50 border-r border-taupe/20 flex-col justify-between p-6 fixed top-0 bottom-0 left-0 z-40 shadow-soft-sm">
-        <div className="space-y-6">
+    <div className="min-h-screen bg-[#F8F7F4] text-charcoal flex font-sans selection:bg-taupe selection:text-sand">
+      {/* ========================================================================= */}
+      {/* DESKTOP SIDEBAR                                                           */}
+      {/* ========================================================================= */}
+      <aside className="hidden lg:flex w-64 shrink-0 bg-white border-r border-stone-200/90 flex-col justify-between p-5 fixed top-0 bottom-0 left-0 z-40 shadow-[1px_0_16px_rgba(0,0,0,0.02)]">
+        <div className="space-y-5">
           {/* Brand Header */}
-          <Link href="/dashboard/host" className="group block space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-taupe/15 text-taupe flex items-center justify-center">
-                <Compass className="w-5 h-5 stroke-[1.5]" />
+          <Link href="/dashboard/host" className="group block">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-charcoal text-white flex items-center justify-center shadow-soft-sm shrink-0 group-hover:bg-taupe transition-colors">
+                <Compass className="w-5 h-5 stroke-[1.75]" />
               </div>
-              <span className="font-classico text-xl font-normal tracking-[0.2em] uppercase text-charcoal">
-                LEEMEVENT
-              </span>
+              <div className="min-w-0">
+                <span className="text-lg font-bold text-charcoal tracking-tight block leading-none">
+                  LEEMEVENTS
+                </span>
+                <span className="text-[10px] text-taupe font-bold tracking-widest uppercase block mt-1">
+                  Host Suite
+                </span>
+              </div>
             </div>
-            <span className="text-[10px] font-classico tracking-[0.25em] uppercase text-taupe block pl-11">
-              Host Portal
-            </span>
           </Link>
 
-          {/* Event Context Pill */}
-          <div className="bg-sand border border-taupe/20 rounded-2xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-classico tracking-wider text-taupe uppercase font-semibold block">
-                Active Celebration
-              </span>
-              <span className="text-xs font-semibold text-charcoal block truncate max-w-[140px]">
-                Eleanor & Liam&apos;s Wedding
-              </span>
-            </div>
-            <Link
-              href="/dashboard/host/events"
-              className="p-1.5 rounded-lg bg-taupe/10 text-taupe hover:bg-taupe hover:text-sand transition-colors"
-              title="Create New Event"
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+        
 
-          <div className="w-full h-[1px] bg-taupe/15" />
+          <div className="w-full h-[1px] bg-stone-200/70" />
 
           {/* Navigation Items */}
-          <nav className="space-y-1.5">
+          <nav className="space-y-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -101,23 +93,27 @@ export default function HostLayout({ children }: HostLayoutProps) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-classico tracking-wider uppercase transition-all group ${
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group ${
                     isActive
-                      ? 'bg-taupe text-sand font-semibold shadow-soft-sm'
-                      : 'text-charcoal/80 hover:bg-taupe/10 hover:text-taupe'
+                      ? 'bg-charcoal text-white font-semibold shadow-soft-sm'
+                      : 'text-stone-600 hover:bg-stone-100/80 hover:text-charcoal'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-sand' : 'text-taupe'}`} />
-                    <span>{item.name}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Icon
+                      className={`w-4 h-4 shrink-0 transition-colors ${
+                        isActive ? 'text-amber-200' : 'text-stone-400 group-hover:text-charcoal'
+                      }`}
+                    />
+                    <span className="truncate">{item.name}</span>
                   </div>
 
                   {item.badge && (
                     <span
-                      className={`px-2 py-0.5 text-[10px] rounded-full font-sans font-bold ${
+                      className={`px-2 py-0.5 text-[10px] rounded-full font-sans font-bold shrink-0 ml-1.5 ${
                         isActive
-                          ? 'bg-sand text-charcoal'
-                          : 'bg-taupe/15 text-taupe group-hover:bg-taupe group-hover:text-sand'
+                          ? 'bg-white/20 text-white'
+                          : 'bg-taupe/15 text-taupe group-hover:bg-taupe group-hover:text-white'
                       }`}
                     >
                       {item.badge}
@@ -125,7 +121,7 @@ export default function HostLayout({ children }: HostLayoutProps) {
                   )}
 
                   {item.isPhase2 && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-sans tracking-normal">
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-sans tracking-normal shrink-0 ml-1.5 font-semibold">
                       Phase 2
                     </span>
                   )}
@@ -135,25 +131,25 @@ export default function HostLayout({ children }: HostLayoutProps) {
           </nav>
         </div>
 
-        {/* User Profile Footer */}
-        <div className="pt-4 border-t border-taupe/15 space-y-3">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-9 h-9 rounded-full bg-taupe text-sand font-classico text-sm font-bold flex items-center justify-center">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'H'}
+        {/* User Profile & Sign Out Footer */}
+        <div className="pt-3 border-t border-stone-200/80 space-y-2.5">
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-9 h-9 rounded-full bg-taupe text-white text-xs font-bold flex items-center justify-center shrink-0 shadow-soft-sm ring-2 ring-taupe/20">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'E'}
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-xs font-semibold text-charcoal block truncate">
-                {user?.name || 'Event Host'}
+                {user?.name || 'Eleanor Vance'}
               </span>
-              <span className="text-[10px] text-charcoal/60 block truncate">
-                {user?.email || 'host@example.com'}
+              <span className="text-[11px] text-stone-500 block truncate">
+                {user?.email || 'eleanor@example.com'}
               </span>
             </div>
           </div>
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-taupe/20 text-xs font-classico tracking-wider uppercase text-charcoal/80 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
@@ -161,57 +157,168 @@ export default function HostLayout({ children }: HostLayoutProps) {
         </div>
       </aside>
 
-      {/* MOBILE TOP BAR */}
-      <header className="lg:hidden bg-sand-50 border-b border-taupe/20 p-4 sticky top-0 z-50 flex items-center justify-between">
-        <Link href="/dashboard/host" className="flex items-center gap-2">
-          <Compass className="w-5 h-5 text-taupe" />
-          <span className="font-classico text-lg font-normal tracking-[0.18em] uppercase text-charcoal">
-            LEEMEVENT
-          </span>
-        </Link>
-
-        <button
-          onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-          className="p-2 rounded-lg text-charcoal hover:bg-taupe/10"
-        >
-          {mobileSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </header>
-
-      {/* MOBILE DRAWER SIDEBAR */}
+      {/* ========================================================================= */}
+      {/* MOBILE DRAWER SIDEBAR                                                     */}
+      {/* ========================================================================= */}
       {mobileSidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-sand/95 backdrop-blur-xl p-6 overflow-y-auto space-y-6 pt-20">
-          <nav className="space-y-2">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+
+          {/* Drawer container */}
+          <div className="relative w-72 max-w-[85vw] bg-white h-full shadow-2xl flex flex-col justify-between p-5 z-10">
+            <div className="space-y-6">
+              {/* Header with Close */}
+              <div className="flex items-center justify-between">
                 <Link
-                  key={item.name}
-                  href={item.href}
+                  href="/dashboard/host"
                   onClick={() => setMobileSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-classico tracking-wider uppercase ${
-                    isActive ? 'bg-taupe text-sand font-bold' : 'text-charcoal hover:bg-taupe/10'
-                  }`}
+                  className="flex items-center gap-2.5"
                 >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.name}</span>
+                  <div className="w-9 h-9 rounded-xl bg-charcoal text-white flex items-center justify-center">
+                    <Compass className="w-5 h-5 stroke-[1.75]" />
+                  </div>
+                  <div>
+                    <span className="text-base font-bold text-charcoal block leading-none">
+                      LEEMEVENTS
+                    </span>
+                    <span className="text-[10px] text-taupe font-bold uppercase block mt-1">
+                      Host Suite
+                    </span>
+                  </div>
                 </Link>
-              );
-            })}
-          </nav>
-          <button
-            onClick={handleLogout}
-            className="w-full btn-secondary py-3 text-xs flex items-center justify-center gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
-          </button>
+
+                <button
+                  onClick={() => setMobileSidebarOpen(false)}
+                  className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-100"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Navigation Items */}
+              <nav className="space-y-1 overflow-y-auto max-h-[60vh]">
+                {navItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setMobileSidebarOpen(false)}
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium ${
+                        isActive
+                          ? 'bg-charcoal text-white font-semibold'
+                          : 'text-stone-700 hover:bg-stone-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-4 h-4" />
+                        <span>{item.name}</span>
+                      </div>
+                      {item.badge && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-taupe/15 text-taupe font-bold">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div className="pt-4 border-t border-stone-200">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-700 hover:bg-red-50 hover:text-red-600"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 lg:pl-72 min-h-screen p-4 sm:p-8 lg:p-10">{children}</main>
+      {/* ========================================================================= */}
+      {/* MAIN CONTENT COLUMN                                                       */}
+      {/* ========================================================================= */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+        {/* Sticky Executive Top Header */}
+        <header className="sticky top-0 z-30 h-16 bg-white/85 backdrop-blur-md border-b border-stone-200/80 px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
+          {/* Left: Mobile hamburger + Breadcrumb info */}
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="lg:hidden p-2 -ml-1.5 rounded-xl text-stone-700 hover:bg-stone-100 transition-colors"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <span className="text-stone-400 hidden sm:inline">Host Portal</span>
+              <ChevronRight className="w-3 h-3 text-stone-300 hidden sm:inline" />
+              <span className="text-charcoal font-bold tracking-tight">
+                {currentNav.name}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Quick actions, Search, Cart, Messages, Avatar */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <Link
+              href="/dashboard/host/browse"
+              className="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-stone-100 border border-stone-200/80 text-xs font-semibold text-stone-700 transition-all shadow-soft-sm"
+            >
+              <Search className="w-3.5 h-3.5 text-taupe" />
+              <span>Browse Suppliers</span>
+            </Link>
+
+            <Link
+              href="/dashboard/host/cart"
+              className="relative p-2 rounded-xl border border-stone-200/80 bg-white hover:bg-[#FAF8F5] text-stone-700 hover:text-charcoal transition-all shadow-soft-sm group"
+              title="View Selection Cart (3)"
+            >
+              <ShoppingBag className="w-4 h-4 text-taupe group-hover:text-charcoal transition-colors" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-charcoal text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
+                3
+              </span>
+            </Link>
+
+            <Link
+              href="/dashboard/host/messages"
+              className="relative p-2 rounded-xl border border-stone-200/80 bg-white hover:bg-[#FAF8F5] text-stone-700 hover:text-charcoal transition-all shadow-soft-sm"
+              title="Messages & Updates"
+            >
+              <Bell className="w-4 h-4 text-stone-500" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-white" />
+            </Link>
+
+            <div className="hidden sm:flex items-center gap-2.5 pl-2 border-l border-stone-200">
+              <div className="w-8 h-8 rounded-full bg-taupe text-white text-xs font-bold flex items-center justify-center shadow-soft-sm ring-1 ring-taupe/20">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'E'}
+              </div>
+              <div className="hidden md:block text-left">
+                <span className="text-xs font-bold text-charcoal block leading-tight truncate max-w-[120px]">
+                  {user?.name || 'Eleanor Vance'}
+                </span>
+                <span className="text-[10px] text-emerald-700 font-semibold block leading-tight">
+                  Event Host
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content Container with Luxury Spacing & Max Width */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 min-w-0">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

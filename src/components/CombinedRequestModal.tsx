@@ -149,16 +149,14 @@ export default function CombinedRequestModal({
                         <div
                           key={cat.id}
                           onClick={() => toggleCategory(cat.id)}
-                          className={`cursor-pointer flex items-center justify-between p-3.5 rounded-xl border transition-all ${
-                            isChecked
+                          className={`cursor-pointer flex items-center justify-between p-3.5 rounded-xl border transition-all ${isChecked
                               ? 'bg-sand-50 border-taupe shadow-soft-sm'
                               : 'bg-transparent border-taupe/20 opacity-70 hover:opacity-100 hover:border-taupe/40'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                              isChecked ? 'bg-taupe text-sand' : 'bg-taupe/10 text-taupe'
-                            }`}>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isChecked ? 'bg-taupe text-sand' : 'bg-taupe/10 text-taupe'
+                              }`}>
                               <Icon className="w-4 h-4" />
                             </div>
                             <span className="text-xs sm:text-sm font-medium text-charcoal">
@@ -166,11 +164,10 @@ export default function CombinedRequestModal({
                             </span>
                           </div>
                           <div
-                            className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
-                              isChecked
+                            className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${isChecked
                                 ? 'bg-taupe border-taupe text-sand'
                                 : 'border-taupe/40 bg-transparent'
-                            }`}
+                              }`}
                           >
                             {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                           </div>
@@ -300,7 +297,7 @@ export default function CombinedRequestModal({
                 Request Successfully Received!
               </h3>
               <p className="text-sm text-charcoal/80 max-w-md mx-auto">
-                Thank you <strong className="text-taupe">{formData.name || 'Event Planner'}</strong>! We have received your combined request for {selectedCategories.length} supplier categories. Our LEEMEVENT concierge team is matching your date right now.
+                Thank you <strong className="text-taupe">{formData.name || 'Event Planner'}</strong>! We have received your combined request for {selectedCategories.length} supplier categories. Our LEEMEVENTS concierge team is matching your date right now.
               </p>
               <div className="bg-sand-50 border border-taupe/20 rounded-2xl p-4 max-w-md mx-auto text-left text-xs space-y-1.5 text-charcoal/70">
                 <p className="font-semibold text-charcoal">✔ Coordinated matching started</p>

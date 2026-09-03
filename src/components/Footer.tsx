@@ -22,12 +22,12 @@ export default function Footer() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-16 border-b border-sand/10">
-          
+
           {/* Column 1: Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2">
               <span className="font-serif-display text-3xl font-bold tracking-tight text-sand">
-                LEEMEVENT
+                LEEMEVENTS
               </span>
               <span className="inline-block w-2.5 h-2.5 rounded-full bg-taupe" />
             </Link>
@@ -114,7 +114,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-xs text-sand/70">
               <li>
                 <Link href="/why-us" className="hover:text-taupe transition-colors">
-                  Why LEEMEVENT
+                  Why LEEMEVENTS
                 </Link>
               </li>
               <li>
@@ -152,8 +152,8 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-taupe shrink-0" />
-                <a href="mailto:hello@leemevent.com" className="hover:text-taupe transition-colors">
-                  hello@leemevent.com
+                <a href="mailto:hello@LEEMEVENTS.com" className="hover:text-taupe transition-colors">
+                  hello@LEEMEVENTS.com
                 </a>
               </li>
               <li className="flex items-center gap-2.5">
@@ -190,7 +190,7 @@ export default function Footer() {
 
         {/* Bottom Copyright & Legal Links */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-sand/50">
-          <p>© {new Date().getFullYear()} LEEMEVENT Inc. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} LEEMEVENTS Inc. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/" className="hover:text-sand transition-colors">
               Privacy Policy

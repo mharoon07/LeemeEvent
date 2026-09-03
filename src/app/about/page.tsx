@@ -43,7 +43,7 @@ export default function AboutPage() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="mt-6 text-base sm:text-xl text-charcoal/80 max-w-2xl mx-auto leading-relaxed"
           >
-            LEEMEVENT was founded with a single mission: to return beauty and simplicity to milestone event planning.
+            LEEMEVENTS was founded with a single mission: to return beauty and simplicity to milestone event planning.
           </motion.p>
         </div>
       </section>

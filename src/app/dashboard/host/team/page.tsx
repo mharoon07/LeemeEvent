@@ -9,25 +9,25 @@ export default function HostTeamPage() {
     <HostLayout>
       <div className="space-y-8">
         <div>
-          <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block font-semibold">
+          <span className="text-xs font-semibold text-taupe block">
             Co-Planning & Collaboration
           </span>
-          <h1 className="font-classico text-3xl font-normal uppercase tracking-wide text-charcoal mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
             Planning & Team
           </h1>
         </div>
 
-        <div className="bg-sand-50 border border-taupe/20 rounded-3xl p-12 text-center max-w-2xl mx-auto space-y-6 shadow-soft-sm">
+        <div className="bg-white border border-stone-200/90 rounded-3xl p-12 text-center max-w-2xl mx-auto space-y-6 shadow-soft-sm">
           <div className="w-16 h-16 rounded-full bg-taupe/10 text-taupe flex items-center justify-center mx-auto">
             <Users className="w-8 h-8" />
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-classico tracking-wider uppercase font-bold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
             <Lock className="w-3.5 h-3.5" />
             <span>Phase 2 Feature Roadmap</span>
           </div>
 
-          <h2 className="font-classico text-2xl uppercase font-semibold text-charcoal">
+          <h2 className="text-2xl font-bold text-charcoal">
             Invite Co-Planners & Family
           </h2>
 

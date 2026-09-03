@@ -66,7 +66,7 @@ export default function HowItWorks({ onStartClick }: HowItWorksProps) {
             From initial idea <span className="font-serif-display lowercase italic font-normal text-taupe">to a flawless event</span>
           </h2>
           <p className="mt-4 text-base sm:text-lg text-charcoal/70 leading-relaxed text-balance">
-            LEEMEVENT makes booking multiple suppliers as effortless as booking a luxury boutique stay.
+            LEEMEVENTS makes booking multiple suppliers as effortless as booking a luxury boutique stay.
           </p>
         </div>
 
@@ -82,9 +82,8 @@ export default function HowItWorks({ onStartClick }: HowItWorksProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.08 }}
-                className={`relative bg-sand-50/80 border border-taupe/20 rounded-3xl p-6 shadow-soft-sm hover:shadow-soft-md transition-all flex flex-col justify-between ${
-                  isLast ? 'md:col-span-2 lg:col-span-2 bg-sand-200/60 border-taupe/40' : ''
-                }`}
+                className={`relative bg-sand-50/80 border border-taupe/20 rounded-3xl p-6 shadow-soft-sm hover:shadow-soft-md transition-all flex flex-col justify-between ${isLast ? 'md:col-span-2 lg:col-span-2 bg-sand-200/60 border-taupe/40' : ''
+                  }`}
               >
                 <div>
                   {/* Step Badge & Icon */}

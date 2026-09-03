@@ -32,7 +32,7 @@ export default function SupplierReviewsPage() {
           </h2>
 
           <p className="text-sm text-charcoal/70 leading-relaxed max-w-md mx-auto font-sans">
-            Verified client testimonials, star ratings, and response options will unlock after your first completed booking on LEEMEVENT.
+            Verified client testimonials, star ratings, and response options will unlock after your first completed booking on LEEMEVENTS.
           </p>
         </div>
       </div>

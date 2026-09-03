@@ -114,10 +114,10 @@ export default function BrowseSuppliersPage() {
     <HostLayout>
       <div className="space-y-8">
         <div>
-          <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block font-semibold">
+          <span className="text-xs font-semibold text-taupe block">
             Supplier Directory
           </span>
-          <h1 className="font-classico text-3xl font-normal uppercase tracking-wide text-charcoal mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
             Browse Vetted Event Partners
           </h1>
         </div>
@@ -131,7 +131,7 @@ export default function BrowseSuppliersPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by supplier name, service, or city..."
-              className="w-full bg-sand-50 border border-taupe/20 rounded-2xl pl-11 pr-4 py-3 text-sm text-charcoal focus:outline-none focus:border-taupe"
+              className="w-full bg-white border border-stone-200/90 rounded-2xl pl-11 pr-4 py-3 text-sm text-charcoal focus:outline-none focus:border-taupe shadow-soft-sm"
             />
           </div>
 
@@ -141,10 +141,10 @@ export default function BrowseSuppliersPage() {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2.5 rounded-xl text-xs font-classico tracking-wider uppercase font-semibold whitespace-nowrap transition-all ${
+                className={`px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                   selectedCategory === cat
-                    ? 'bg-taupe text-sand shadow-soft-sm'
-                    : 'bg-sand-50 border border-taupe/20 text-charcoal hover:bg-taupe/10'
+                    ? 'bg-charcoal text-white shadow-soft-sm'
+                    : 'bg-white border border-stone-200/90 text-charcoal hover:bg-stone-100/80'
                 }`}
               >
                 {cat}
@@ -158,32 +158,32 @@ export default function BrowseSuppliersPage() {
           {filteredSuppliers.map((sup) => (
             <div
               key={sup.id}
-              className="bg-sand-50 border border-taupe/20 rounded-3xl overflow-hidden hover:border-taupe/40 transition-all shadow-soft-sm flex flex-col justify-between"
+              className="bg-white border border-stone-200/90 rounded-3xl overflow-hidden hover:border-taupe/40 hover:shadow-soft-md transition-all shadow-soft-sm flex flex-col justify-between group"
             >
               <div>
                 <div className="relative h-48 w-full">
-                  <Image src={sup.image} alt={sup.name} fill className="object-cover" />
+                  <Image src={sup.image} alt={sup.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                   {sup.verified && (
-                    <div className="absolute top-3 left-3 bg-sand/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 text-[10px] font-classico tracking-wider uppercase font-bold text-taupe">
-                      <ShieldCheck className="w-3.5 h-3.5" />
+                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-bold text-taupe shadow-soft-sm">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Verified Partner</span>
                     </div>
                   )}
-                  <div className="absolute bottom-3 right-3 bg-charcoal/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-sand font-mono text-xs font-bold">
+                  <div className="absolute bottom-3 right-3 bg-charcoal/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-white font-mono text-xs font-bold shadow-sm">
                     {sup.price}
                   </div>
                 </div>
 
                 <div className="p-5 space-y-2">
-                  <span className="text-[10px] font-classico tracking-widest uppercase text-taupe font-semibold block">
+                  <span className="text-xs text-taupe font-semibold uppercase tracking-wider block">
                     {sup.category} • {sup.location}
                   </span>
-                  <h3 className="font-classico text-xl uppercase font-semibold text-charcoal">
+                  <h3 className="text-lg font-bold text-charcoal tracking-tight group-hover:text-taupe transition-colors">
                     {sup.name}
                   </h3>
 
-                  <div className="flex items-center gap-2 text-xs text-charcoal/70">
-                    <div className="flex text-taupe">
+                  <div className="flex items-center gap-2 text-xs text-stone-500">
+                    <div className="flex text-amber-500">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className="w-3.5 h-3.5 fill-current" />
                       ))}
@@ -194,11 +194,11 @@ export default function BrowseSuppliersPage() {
                 </div>
               </div>
 
-              <div className="p-5 pt-0 flex items-center gap-3 border-t border-taupe/10 mt-3">
+              <div className="p-5 pt-0 flex items-center gap-3 border-t border-stone-100 mt-3">
                 <button
                   type="button"
                   onClick={() => toggleAddSupplier(sup.id)}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-classico tracking-wider uppercase font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                     sup.added
                       ? 'bg-emerald-700 text-sand'
                       : 'btn-primary'

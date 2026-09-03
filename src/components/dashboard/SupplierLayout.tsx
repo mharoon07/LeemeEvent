@@ -56,55 +56,59 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-sand text-charcoal flex flex-col lg:flex-row font-sans selection:bg-taupe selection:text-sand">
+    <div className="min-h-screen bg-[#F8F7F4] text-charcoal flex flex-col lg:flex-row font-sans selection:bg-taupe selection:text-sand">
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden lg:flex w-72 shrink-0 bg-sand-50 border-r border-taupe/20 flex-col justify-between p-6 fixed top-0 bottom-0 left-0 z-40 shadow-soft-sm">
-        <div className="space-y-6">
+      <aside className="hidden lg:flex w-64 shrink-0 bg-white border-r border-stone-200/90 flex-col justify-between p-5 fixed top-0 bottom-0 left-0 z-40 shadow-[1px_0_12px_rgba(0,0,0,0.03)]">
+        <div className="space-y-5">
           {/* Brand Header */}
-          <Link href="/dashboard/supplier" className="group block space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-taupe/15 text-taupe flex items-center justify-center">
-                <Compass className="w-5 h-5 stroke-[1.5]" />
+          <Link href="/dashboard/supplier" className="group block">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-charcoal text-white flex items-center justify-center shadow-soft-sm shrink-0 group-hover:bg-taupe transition-colors">
+                <Compass className="w-5 h-5 stroke-[1.75]" />
               </div>
-              <span className="font-classico text-xl font-normal tracking-[0.2em] uppercase text-charcoal">
-                LEEMEVENT
-              </span>
+              <div>
+                <span className="text-lg font-bold text-charcoal tracking-tight block leading-none">
+                  LEEMEVENTS
+                </span>
+                <span className="text-[11px] text-taupe font-semibold tracking-wide uppercase block mt-1">
+                  Supplier Hub
+                </span>
+              </div>
             </div>
-            <span className="text-[10px] font-classico tracking-[0.25em] uppercase text-taupe block pl-11">
-              Supplier Partner Hub
-            </span>
           </Link>
 
           {/* Verification Badge Header */}
-          <div className="bg-sand border border-taupe/20 rounded-2xl p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className={`w-4 h-4 ${isApproved ? 'text-emerald-700' : 'text-amber-600'}`} />
-              <div>
-                <span className="text-[10px] font-classico tracking-wider uppercase font-bold text-charcoal block">
-                  {isApproved ? 'Verified Supplier' : 'Pending Approval'}
-                </span>
-                <span className="text-[9px] text-charcoal/60 block">
-                  {isApproved ? 'Active in Directory' : 'Review in Progress'}
-                </span>
+          <div className="bg-[#FAF8F5] border border-stone-200/90 rounded-2xl p-3 shadow-soft-sm">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 pr-1">
+                <ShieldCheck className={`w-4 h-4 shrink-0 ${isApproved ? 'text-emerald-700' : 'text-amber-600'}`} />
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-charcoal block truncate">
+                    {isApproved ? 'Verified Supplier' : 'Pending Approval'}
+                  </span>
+                  <span className="text-[10px] text-stone-500 block truncate">
+                    {isApproved ? 'Active in Directory' : 'Review in Progress'}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {!isApproved && (
-              <button
-                type="button"
-                onClick={approveSupplier}
-                className="text-[9px] font-classico uppercase bg-emerald-700 text-sand px-2 py-1 rounded font-bold hover:bg-emerald-800"
-                title="Demo: Click to simulate instant admin approval"
-              >
-                Approve
-              </button>
-            )}
+              {!isApproved && (
+                <button
+                  type="button"
+                  onClick={approveSupplier}
+                  className="text-[10px] uppercase bg-emerald-700 text-white px-2 py-0.5 rounded-lg font-bold hover:bg-emerald-800 shrink-0 shadow-sm"
+                  title="Demo: Click to simulate instant admin approval"
+                >
+                  Approve
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="w-full h-[1px] bg-taupe/15" />
+          <div className="w-full h-[1px] bg-stone-200/80" />
 
           {/* Navigation Items */}
-          <nav className="space-y-1 max-h-[420px] overflow-y-auto pr-1">
+          <nav className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -113,31 +117,29 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-classico tracking-wider uppercase transition-all group ${
-                    isActive
-                      ? 'bg-charcoal text-sand font-semibold shadow-soft-sm'
-                      : 'text-charcoal/80 hover:bg-taupe/10 hover:text-taupe'
-                  }`}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group ${isActive
+                      ? 'bg-charcoal text-white font-semibold shadow-soft-sm'
+                      : 'text-stone-700 hover:bg-stone-100/80 hover:text-charcoal'
+                    }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-sand' : 'text-taupe'}`} />
-                    <span>{item.name}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-amber-200' : 'text-taupe group-hover:text-charcoal'}`} />
+                    <span className="truncate">{item.name}</span>
                   </div>
 
                   {item.badge && (
                     <span
-                      className={`px-2 py-0.5 text-[10px] rounded-full font-sans font-bold ${
-                        isActive
-                          ? 'bg-taupe text-sand'
-                          : 'bg-taupe/15 text-taupe group-hover:bg-taupe group-hover:text-sand'
-                      }`}
+                      className={`px-2 py-0.5 text-[10px] rounded-full font-sans font-bold shrink-0 ml-1.5 ${isActive
+                          ? 'bg-white/20 text-white'
+                          : 'bg-taupe/15 text-taupe group-hover:bg-taupe group-hover:text-white'
+                        }`}
                     >
                       {item.badge}
                     </span>
                   )}
 
                   {item.isPhase2 && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-sans tracking-normal">
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-sans tracking-normal shrink-0 ml-1.5 font-semibold">
                       Phase 2
                     </span>
                   )}
@@ -148,16 +150,16 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
         </div>
 
         {/* User Profile Footer */}
-        <div className="pt-4 border-t border-taupe/15 space-y-3">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-9 h-9 rounded-full bg-charcoal text-sand font-classico text-sm font-bold flex items-center justify-center">
+        <div className="pt-3 border-t border-stone-200/80 space-y-2.5">
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-9 h-9 rounded-full bg-charcoal text-white text-xs font-bold flex items-center justify-center shrink-0 shadow-soft-sm">
               {user?.businessName ? user.businessName.charAt(0).toUpperCase() : 'S'}
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-xs font-semibold text-charcoal block truncate">
                 {user?.businessName || user?.name || 'Aura Floral & Styling'}
               </span>
-              <span className="text-[10px] text-charcoal/60 block truncate">
+              <span className="text-[11px] text-stone-500 block truncate">
                 {user?.email || 'vendor@example.com'}
               </span>
             </div>
@@ -165,7 +167,7 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-taupe/20 text-xs font-classico tracking-wider uppercase text-charcoal/80 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-stone-200 text-xs font-semibold text-stone-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
@@ -177,8 +179,8 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
       <header className="lg:hidden bg-sand-50 border-b border-taupe/20 p-4 sticky top-0 z-50 flex items-center justify-between">
         <Link href="/dashboard/supplier" className="flex items-center gap-2">
           <Compass className="w-5 h-5 text-taupe" />
-          <span className="font-classico text-lg font-normal tracking-[0.18em] uppercase text-charcoal">
-            LEEMEVENT Partner
+          <span className="text-lg font-bold text-charcoal tracking-normal">
+            LEEMEVENTS Partner
           </span>
         </Link>
 
@@ -202,9 +204,8 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
                   key={item.name}
                   href={item.href}
                   onClick={() => setMobileSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-classico tracking-wider uppercase ${
-                    isActive ? 'bg-charcoal text-sand font-bold' : 'text-charcoal hover:bg-taupe/10'
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${isActive ? 'bg-charcoal text-sand font-semibold' : 'text-charcoal hover:bg-taupe/10'
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span>{item.name}</span>
@@ -222,8 +223,57 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
         </div>
       )}
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 lg:pl-72 min-h-screen p-4 sm:p-8 lg:p-10">{children}</main>
+      {/* ========================================================================= */}
+      {/* MAIN CONTENT COLUMN                                                       */}
+      {/* ========================================================================= */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+        {/* Sticky Executive Top Header */}
+        <header className="sticky top-0 z-30 h-16 bg-white/85 backdrop-blur-md border-b border-stone-200/80 px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="lg:hidden p-2 -ml-1.5 rounded-xl text-stone-700 hover:bg-stone-100 transition-colors"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <span className="text-stone-400 hidden sm:inline">Supplier Hub</span>
+              <span className="text-stone-300 hidden sm:inline">/</span>
+              <span className="text-charcoal font-bold tracking-tight">
+                {navItems.find((n) => n.href === pathname)?.name || 'Dashboard'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Live in Directory</span>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-2.5 pl-2 border-l border-stone-200">
+              <div className="w-8 h-8 rounded-full bg-charcoal text-white text-xs font-bold flex items-center justify-center shadow-soft-sm">
+                {user?.businessName ? user.businessName.charAt(0).toUpperCase() : 'S'}
+              </div>
+              <div className="hidden md:block text-left">
+                <span className="text-xs font-bold text-charcoal block leading-tight truncate max-w-[120px]">
+                  {user?.businessName || 'Aura Floral'}
+                </span>
+                <span className="text-[10px] text-stone-500 block leading-tight">
+                  Verified Vendor
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content Container with Luxury Spacing & Max Width */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 min-w-0">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

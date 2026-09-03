@@ -52,7 +52,7 @@ export default function ValueProps() {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-20">
           <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block mb-3 font-semibold">
-            Why choose LEEMEVENT
+            Why choose LEEMEVENTS
           </span>
           <h2 className="font-classico text-3xl sm:text-5xl uppercase font-normal text-charcoal tracking-wide text-balance">
             Event planning, <span className="font-serif-display lowercase italic font-normal text-taupe">without the chaos</span>
