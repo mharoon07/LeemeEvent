@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Plus_Jakarta_Sans, Tenor_Sans } from 'next/font/goo
 import './globals.css';
 import SeoSchema from '@/components/SeoSchema';
 import { AuthProvider } from '@/context/AuthContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -95,7 +96,9 @@ export default function RootLayout({
         <SeoSchema />
       </head>
       <body className="bg-sand text-charcoal antialiased selection:bg-taupe selection:text-sand">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <LanguageProvider>{children}</LanguageProvider>
+        </AuthProvider>
       </body>
     </html>
   );

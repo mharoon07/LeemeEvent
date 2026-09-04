@@ -7,29 +7,14 @@ import Footer from '@/components/Footer';
 import CombinedRequestModal from '@/components/CombinedRequestModal';
 import { motion } from 'framer-motion';
 import { Sparkles, HelpCircle, ChevronDown } from 'lucide-react';
-
-const FAQS = [
-  {
-    q: 'How does a combined event request work?',
-    a: 'Instead of contacting vendors individually, you select the supplier categories you need (e.g. Venue, Catering, Photography, DJ), pick your event date, and submit 1 form. Our platform broadcasts your request to matched available partners simultaneously.',
-  },
-  {
-    q: 'Are the prices standard or customized?',
-    a: 'You receive customized proposals tailored to your guest count, location, and date. Because vendors receive coordinated briefs, we often secure bundle packages and streamlined rates.',
-  },
-  {
-    q: 'Can I add or remove suppliers after submitting?',
-    a: 'Yes! Your dedicated LEEMEVENTS matchmaker works with you to refine your selections until your final proposal matches your vision 100%.',
-  },
-  {
-    q: 'Is using LEEMEVENTS free for event organizers?',
-    a: 'Submitting requests and receiving combined proposals is 100% free with no obligation to book. We handle all coordination at zero added markup.',
-  },
-];
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function HowItWorksPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const { t } = useLanguage();
+
+  const faqs = t.howItWorks.faq.items;
 
   return (
     <main className="min-h-screen bg-sand text-charcoal font-sans selection:bg-taupe selection:text-sand">
@@ -45,7 +30,7 @@ export default function HowItWorksPage() {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sand-200/80 border border-taupe/20 text-taupe text-xs font-classico tracking-[0.2em] uppercase mb-6"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>The 7-Step Experience</span>
+            <span>{t.howItWorks.tag}</span>
           </motion.div>
 
           <motion.h1
@@ -54,7 +39,10 @@ export default function HowItWorksPage() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="font-classico text-4xl sm:text-6xl font-normal uppercase tracking-wide text-charcoal leading-tight"
           >
-            How <span className="font-serif-display lowercase italic font-normal text-taupe">LEEMEVENTS works.</span>
+            {t.howItWorks.titlePart1}{' '}
+            <span className="font-serif-display lowercase italic font-normal text-taupe">
+              {t.howItWorks.titlePart2}
+            </span>
           </motion.h1>
 
           <motion.p
@@ -63,7 +51,7 @@ export default function HowItWorksPage() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="mt-6 text-base sm:text-xl text-charcoal/80 max-w-2xl mx-auto leading-relaxed"
           >
-            From selecting your date to celebrating on the big day, see how our 7-step process simplifies multi-vendor event planning.
+            {t.howItWorks.subtext}
           </motion.p>
         </div>
       </section>
@@ -76,15 +64,15 @@ export default function HowItWorksPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block mb-2 font-semibold">
-              Got Questions?
+              {t.howItWorks.faq.tag}
             </span>
             <h2 className="font-classico text-3xl uppercase font-normal text-charcoal tracking-wide">
-              Frequently Asked Questions
+              {t.howItWorks.faq.title}
             </h2>
           </div>
 
           <div className="space-y-4">
-            {FAQS.map((faq, index) => {
+            {faqs.map((faq, index) => {
               const isOpen = openFaq === index;
               return (
                 <div
@@ -98,8 +86,9 @@ export default function HowItWorksPage() {
                       {faq.q}
                     </span>
                     <ChevronDown
-                      className={`w-5 h-5 text-taupe transition-transform ${isOpen ? 'rotate-180' : ''
-                        }`}
+                      className={`w-5 h-5 text-taupe transition-transform ${
+                        isOpen ? 'rotate-180' : ''
+                      }`}
                     />
                   </div>
                   {isOpen && (
@@ -118,7 +107,7 @@ export default function HowItWorksPage() {
               className="btn-primary px-8 py-3.5 text-base flex items-center gap-2 mx-auto"
             >
               <Sparkles className="w-4 h-4 text-sand" />
-              <span>Start My Event Now</span>
+              <span>{t.howItWorks.faq.ctaBtn}</span>
             </button>
           </div>
         </div>

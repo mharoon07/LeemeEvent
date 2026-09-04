@@ -3,12 +3,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Calendar, ArrowRight } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface FinalCTAProps {
   onStartClick: () => void;
 }
 
 export default function FinalCTA({ onStartClick }: FinalCTAProps) {
+  const { t } = useLanguage();
+
   return (
     <section className="py-28 bg-sand border-t border-taupe/15 relative overflow-hidden text-center">
       {/* Background Arch Motif */}
@@ -26,16 +29,16 @@ export default function FinalCTA({ onStartClick }: FinalCTAProps) {
         >
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sand-200 text-taupe text-xs font-semibold uppercase tracking-widest">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Ready for a Effortless Planning Experience?</span>
+            <span>{t.finalCTA.badge}</span>
           </span>
 
           <h2 className="font-serif-display text-4xl sm:text-6xl font-bold text-charcoal tracking-tight text-balance leading-[1.15]">
-            Design your dream celebration <br className="hidden sm:inline" />
-            <span className="italic font-normal text-taupe">in one combined request.</span>
+            {t.finalCTA.titlePart1} <br className="hidden sm:inline" />
+            <span className="italic font-normal text-taupe">{t.finalCTA.titlePart2}</span>
           </h2>
 
           <p className="text-base sm:text-xl text-charcoal/80 max-w-2xl mx-auto leading-relaxed text-balance">
-            Stop juggling individual quotes. Build your custom supplier stack in under 2 minutes and receive aligned proposals.
+            {t.finalCTA.subtext}
           </p>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -44,13 +47,13 @@ export default function FinalCTA({ onStartClick }: FinalCTAProps) {
               className="w-full sm:w-auto btn-primary px-8 py-4 text-base font-semibold flex items-center justify-center gap-3 group"
             >
               <Calendar className="w-5 h-5 text-sand" />
-              <span>Start Planning Your Event</span>
+              <span>{t.finalCTA.button}</span>
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
 
           <p className="text-xs text-charcoal/60 pt-2">
-            ✓ 100% Free & No Obligation • No hidden fees
+            {t.finalCTA.guarantee}
           </p>
         </motion.div>
       </div>

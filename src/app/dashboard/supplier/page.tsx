@@ -2,17 +2,14 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import SupplierLayout from '@/components/dashboard/SupplierLayout';
+import { useLanguage } from '@/context/LanguageContext';
 import {
-  Inbox,
   Calendar,
-  TrendingUp,
   ShieldCheck,
   CheckCircle2,
   XCircle,
   MessageSquare,
-  Clock,
   ChevronRight,
   Sparkles,
   MapPin,
@@ -20,6 +17,7 @@ import {
 } from 'lucide-react';
 
 export default function SupplierDashboardHome() {
+  const { t } = useLanguage();
   const [requests, setRequests] = useState([
     {
       id: 'sreq_1',
@@ -29,7 +27,7 @@ export default function SupplierDashboardHome() {
       location: 'Cotswolds, UK',
       guestCount: 120,
       requestedService: 'Full Floral & Backdrop Package',
-      budget: '$2,200',
+      budget: '€2.200',
       status: 'pending',
     },
     {
@@ -40,7 +38,7 @@ export default function SupplierDashboardHome() {
       location: 'London, UK',
       guestCount: 65,
       requestedService: 'Tablescape & Entrance Arch',
-      budget: '$1,400',
+      budget: '€1.400',
       status: 'pending',
     },
     {
@@ -51,7 +49,7 @@ export default function SupplierDashboardHome() {
       location: 'Bath, UK',
       guestCount: 80,
       requestedService: 'Bridal Bouquet & Dining Florals',
-      budget: '$1,850',
+      budget: '€1.850',
       status: 'pending',
     },
   ]);
@@ -69,11 +67,11 @@ export default function SupplierDashboardHome() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-taupe block">
-                Supplier Dashboard
+                {t.dashboard.supplierHome.dashboardBadge}
               </span>
               <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 <ShieldCheck className="w-3 h-3" />
-                <span>Verified Partner</span>
+                <span>{t.dashboard.supplierHome.verifiedPartner}</span>
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
@@ -87,14 +85,14 @@ export default function SupplierDashboardHome() {
               className="btn-secondary px-4 py-2.5 text-xs flex items-center gap-2"
             >
               <Calendar className="w-3.5 h-3.5" />
-              <span>Update Availability</span>
+              <span>{t.dashboard.supplierHome.updateAvailability}</span>
             </Link>
             <Link
               href="/dashboard/supplier/services"
               className="btn-primary px-4 py-2.5 text-xs flex items-center gap-2"
             >
               <Sparkles className="w-3.5 h-3.5 text-sand" />
-              <span>Manage Services</span>
+              <span>{t.dashboard.supplierHome.manageServices}</span>
             </Link>
           </div>
         </div>
@@ -104,55 +102,53 @@ export default function SupplierDashboardHome() {
           <div className="bg-sand-50 border border-taupe/20 rounded-2xl p-5 space-y-2 shadow-soft-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs text-taupe font-semibold">
-                New Requests
+                {t.dashboard.supplierHome.newRequests}
               </span>
               <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
                 3
               </div>
             </div>
             <div className="text-3xl font-bold text-charcoal">3 Pending</div>
-            <span className="text-xs text-charcoal/60 block">Requires response within 24h</span>
+            <span className="text-xs text-charcoal/60 block">{t.dashboard.supplierHome.requiresResponse}</span>
           </div>
 
           <div className="bg-sand-50 border border-taupe/20 rounded-2xl p-5 space-y-2 shadow-soft-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs text-taupe font-semibold">
-                Confirmed Bookings
+                {t.dashboard.supplierHome.confirmedBookings}
               </span>
               <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
                 4
               </div>
             </div>
             <div className="text-3xl font-bold text-charcoal">4 Confirmed</div>
-            <span className="text-xs text-emerald-700 font-semibold block">100% calendar synced</span>
+            <span className="text-xs text-emerald-700 font-semibold block">{t.dashboard.supplierHome.synced}</span>
           </div>
 
           <div className="bg-sand-50 border border-taupe/20 rounded-2xl p-5 space-y-2 shadow-soft-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs text-taupe font-semibold">
-                Est. Monthly Revenue
+                {t.dashboard.supplierHome.estRevenue}
               </span>
               <div className="w-8 h-8 rounded-xl bg-taupe/15 text-taupe flex items-center justify-center font-bold text-xs">
-                $
+                €
               </div>
             </div>
-            <div className="text-3xl font-bold text-taupe font-mono">$12,400</div>
-            <span className="text-xs text-charcoal/60 block">Sept 2026 pipeline</span>
+            <div className="text-3xl font-bold text-taupe font-mono">€12.400</div>
+            <span className="text-xs text-charcoal/60 block">{t.dashboard.supplierHome.revenueSub}</span>
           </div>
 
           <div className="bg-sand-50 border border-taupe/20 rounded-2xl p-5 space-y-2 shadow-soft-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs text-taupe font-semibold">
-                Profile Completeness
+                {t.dashboard.supplierHome.overallRating}
               </span>
-              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-xs">
-                95%
+              <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+                ★ 4.9
               </div>
             </div>
-            <div className="text-3xl font-bold text-charcoal">95% Complete</div>
-            <div className="w-full h-1.5 bg-taupe/15 rounded-full overflow-hidden mt-1">
-              <div className="h-full bg-taupe w-[95%]" />
-            </div>
+            <div className="text-3xl font-bold text-charcoal">4.9 / 5.0</div>
+            <span className="text-xs text-charcoal/60 block">{t.dashboard.supplierHome.reviewsCount}</span>
           </div>
         </div>
 
@@ -160,13 +156,13 @@ export default function SupplierDashboardHome() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-charcoal">
-              Incoming Booking Requests
+              {t.dashboard.supplierHome.pendingQueue}
             </h2>
             <Link
               href="/dashboard/supplier/requests"
               className="text-xs text-taupe hover:underline font-semibold flex items-center gap-1"
             >
-              <span>View All Requests</span>
+              <span>{t.dashboard.hostHome.viewAll}</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
@@ -198,12 +194,12 @@ export default function SupplierDashboardHome() {
                     </div>
                     <div className="flex items-center gap-1 font-medium">
                       <Users className="w-3.5 h-3.5 text-taupe" />
-                      <span>{req.guestCount} Guests</span>
+                      <span>{req.guestCount} {t.dashboard.supplierHome.guestCountLabel}</span>
                     </div>
                   </div>
 
                   <div className="pt-1 text-xs text-charcoal/70">
-                    Requested Package: <strong className="text-charcoal">{req.requestedService}</strong> • Budget: <span className="font-mono font-bold text-taupe">{req.budget}</span>
+                    {t.dashboard.supplierHome.serviceLabel}: <strong className="text-charcoal">{req.requestedService}</strong> • Budget: <span className="font-mono font-bold text-taupe">{req.budget}</span>
                   </div>
                 </div>
 
@@ -217,7 +213,7 @@ export default function SupplierDashboardHome() {
                         className="px-4 py-2.5 rounded-xl border border-red-200 text-red-700 bg-red-50 text-xs font-classico tracking-wider uppercase font-semibold hover:bg-red-100 transition-colors flex items-center gap-1.5"
                       >
                         <XCircle className="w-4 h-4" />
-                        <span>Decline</span>
+                        <span>{t.dashboard.supplierHome.declineBtn}</span>
                       </button>
 
                       <button
@@ -226,7 +222,7 @@ export default function SupplierDashboardHome() {
                         className="px-5 py-2.5 rounded-xl bg-emerald-700 text-sand text-xs font-classico tracking-wider uppercase font-semibold hover:bg-emerald-800 transition-colors flex items-center gap-1.5 shadow-soft-sm"
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>Accept Booking</span>
+                        <span>{t.dashboard.supplierHome.acceptBtn}</span>
                       </button>
                     </>
                   ) : (
@@ -237,7 +233,7 @@ export default function SupplierDashboardHome() {
                           : 'bg-red-100 text-red-800 border border-red-300'
                       }`}
                     >
-                      {req.status === 'accepted' ? '✓ Booking Accepted' : '✗ Request Declined'}
+                      {req.status === 'accepted' ? t.dashboard.supplierHome.acceptedStatus : t.dashboard.supplierHome.declinedStatus}
                     </span>
                   )}
 

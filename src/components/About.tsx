@@ -4,12 +4,15 @@ import React from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Sparkles, Heart, CheckCircle2, ArrowRight } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface AboutProps {
   onLearnMoreClick: () => void;
 }
 
 export default function About({ onLearnMoreClick }: AboutProps) {
+  const { t } = useLanguage();
+
   return (
     <section id="about" className="py-28 bg-sand border-t border-taupe/15 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -58,8 +61,12 @@ export default function About({ onLearnMoreClick }: AboutProps) {
                   <Heart className="w-5 h-5 fill-taupe" />
                 </div>
                 <div className="text-left">
-                  <span className="block text-xs font-classico tracking-wider uppercase font-bold text-charcoal">Wabi Sabi Aesthetic</span>
-                  <span className="block text-[11px] text-charcoal/70">Timeless stone & earth tranquility</span>
+                  <span className="block text-xs font-classico tracking-wider uppercase font-bold text-charcoal">
+                    {t.about.wabiSabiTitle}
+                  </span>
+                  <span className="block text-[11px] text-charcoal/70">
+                    {t.about.wabiSabiDesc}
+                  </span>
                 </div>
               </div>
             </div>
@@ -75,38 +82,41 @@ export default function About({ onLearnMoreClick }: AboutProps) {
           >
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-taupe/10 text-taupe text-xs font-classico tracking-[0.2em] uppercase">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>About LEEMEVENTS</span>
+              <span>{t.about.tag}</span>
             </div>
 
             <h2 className="font-classico text-3xl sm:text-5xl uppercase font-normal text-charcoal tracking-wide leading-[1.15] text-balance">
-              Rediscover the joy <span className="font-serif-display lowercase italic font-normal text-taupe">of celebrating.</span>
+              {t.about.titlePart1}{' '}
+              <span className="font-serif-display lowercase italic font-normal text-taupe">
+                {t.about.titlePart2}
+              </span>
             </h2>
 
             <p className="text-base sm:text-lg text-charcoal/80 leading-relaxed">
-              LEEMEVENTS was born out of a simple realization: planning a milestone celebration was far too often overshadowed by managing dozens of separate email threads, fragmented price quotes, and misaligned vendor schedules.
+              {t.about.p1}
             </p>
 
             <p className="text-sm sm:text-base text-charcoal/70 leading-relaxed">
-              We believe every event — from an intimate backyard anniversary to a breathtaking estate wedding — deserves calm, elegance, and inspiration. That is why we built the world&apos;s first <strong>two-sided combined event marketplace platform</strong>.
+              {t.about.p2} <strong>{t.about.highlight}</strong>
             </p>
 
             <div className="space-y-3 pt-2">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-taupe shrink-0 mt-0.5" />
                 <span className="text-sm text-charcoal/85">
-                  <strong>Single Point of Contact:</strong> Seamless coordination across all your chosen partners without noise.
+                  <strong>{t.about.bullet1Title}</strong> {t.about.bullet1Desc}
                 </span>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-taupe shrink-0 mt-0.5" />
                 <span className="text-sm text-charcoal/85">
-                  <strong>Quality Guarantee:</strong> Only verified suppliers with a proven track record of excellence.
+                  <strong>{t.about.bullet2Title}</strong> {t.about.bullet2Desc}
                 </span>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-taupe shrink-0 mt-0.5" />
                 <span className="text-sm text-charcoal/85">
-                  <strong>Transparent Terms:</strong> 1 joint agreement and clear, predictable payments.
+                  <strong>{t.about.bullet3Title}</strong> {t.about.bullet3Desc}
                 </span>
               </div>
             </div>
@@ -116,7 +126,7 @@ export default function About({ onLearnMoreClick }: AboutProps) {
                 onClick={onLearnMoreClick}
                 className="btn-primary px-6 py-3 text-sm flex items-center gap-2 group"
               >
-                <span>Discover Our Story</span>
+                <span>{t.about.ctaBtn}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>

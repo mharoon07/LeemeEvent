@@ -4,52 +4,31 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
-
-const TESTIMONIALS = [
-  {
-    id: 1,
-    name: 'Sophie & Lucas van Dijk',
-    event: 'Estate Wedding at Country Manor',
-    location: 'Cotswolds / Oxford',
-    rating: 5,
-    quote:
-      'LEEMEVENTS’s combined request system was a lifesaver for our wedding. Within 24 hours, our dream venue, photographer, and caterer were perfectly synchronized. Zero stress, just 1 clear dashboard!',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
-    suppliersBooked: 'Venue, Photographer, Live Band & Catering',
-  },
-  {
-    id: 2,
-    name: 'Charlotte Sterling',
-    event: '30th Birthday Rooftop Celebration',
-    location: 'Downtown Manhattan',
-    rating: 5,
-    quote:
-      'I wanted a chic dinner party with a mixologist and live DJ for 60 guests. With 1 request on LEEMEVENTS, everything was lined up seamlessly. My guests are still talking about it!',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400&auto=format&fit=crop',
-    suppliersBooked: 'Rooftop Venue, Mixologist, DJ & Styling',
-  },
-  {
-    id: 3,
-    name: 'Marcus Chen & TechVision Team',
-    event: 'Annual Corporate Gala & Award Show',
-    location: 'San Francisco',
-    rating: 5,
-    quote:
-      'Professional, transparent, and remarkably fast. As an event director, LEEMEVENTS saved me weeks of back-and-forth email tag. Centralized billing made our accounting completely painless.',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop',
-    suppliersBooked: 'Industrial Space, AV/Lighting, Catering & Staff',
-  },
-];
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function Testimonials() {
+  const { t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  const avatars = [
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop',
+  ];
+
+  const testimonialsList = t.testimonials.items.map((item, idx) => ({
+    id: idx + 1,
+    ...item,
+    avatar: avatars[idx] || avatars[0],
+    rating: 5,
+  }));
+
   const nextTestimonial = () => {
-    setCurrentIndex((prev) => (prev + 1) % TESTIMONIALS.length);
+    setCurrentIndex((prev) => (prev + 1) % testimonialsList.length);
   };
 
   const prevTestimonial = () => {
-    setCurrentIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
+    setCurrentIndex((prev) => (prev - 1 + testimonialsList.length) % testimonialsList.length);
   };
 
   return (
@@ -58,19 +37,19 @@ export default function Testimonials() {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-xs font-semibold uppercase tracking-widest text-taupe block mb-3">
-            Real Host Experiences
+            {t.testimonials.tag}
           </span>
           <h2 className="font-serif-display text-3xl sm:text-5xl font-bold text-charcoal tracking-tight text-balance">
-            Loved by couples & event planners
+            {t.testimonials.title}
           </h2>
           <p className="mt-4 text-base text-charcoal/70 text-balance">
-            Read how host couples and event directors created unforgettable celebrations with our combined marketplace platform.
+            {t.testimonials.subtext}
           </p>
         </div>
 
         {/* Testimonials 3-Card Carousel Grid / Active Focus */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {TESTIMONIALS.map((item, index) => {
+          {testimonialsList.map((item, index) => {
             const isActive = index === currentIndex;
             return (
               <motion.div
@@ -80,10 +59,11 @@ export default function Testimonials() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 onClick={() => setCurrentIndex(index)}
-                className={`cursor-pointer bg-sand-50/90 border rounded-3xl p-8 shadow-soft-sm transition-all duration-300 flex flex-col justify-between relative ${isActive
+                className={`cursor-pointer bg-sand-50/90 border rounded-3xl p-8 shadow-soft-sm transition-all duration-300 flex flex-col justify-between relative ${
+                  isActive
                     ? 'border-taupe shadow-soft-lg scale-[1.02] bg-sand-100/90'
                     : 'border-taupe/20 opacity-80 hover:opacity-100 hover:border-taupe/40'
-                  }`}
+                }`}
               >
                 <div>
                   {/* Quote Icon & Rating Stars */}
@@ -140,12 +120,13 @@ export default function Testimonials() {
           </button>
 
           <div className="flex gap-2">
-            {TESTIMONIALS.map((_, i) => (
+            {testimonialsList.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentIndex(i)}
-                className={`h-2 rounded-full transition-all ${i === currentIndex ? 'w-8 bg-taupe' : 'w-2 bg-taupe/30'
-                  }`}
+                className={`h-2 rounded-full transition-all ${
+                  i === currentIndex ? 'w-8 bg-taupe' : 'w-2 bg-taupe/30'
+                }`}
                 aria-label={`Go to slide ${i + 1}`}
               />
             ))}

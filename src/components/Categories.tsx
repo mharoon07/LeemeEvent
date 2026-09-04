@@ -19,119 +19,122 @@ import {
   Aperture,
   ArrowUpRight,
 } from 'lucide-react';
-
-const CATEGORIES = [
-  {
-    id: 'venue',
-    label: 'Venues & Locations',
-    count: '140+ Unique Venues',
-    icon: Building2,
-    tag: 'Popular',
-    image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'catering',
-    label: 'Catering & Food Trucks',
-    count: '95+ Culinary Partners',
-    icon: Utensils,
-    tag: 'Gourmet',
-    image: 'https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'photography',
-    label: 'Photography',
-    count: '110+ Photographers',
-    icon: Camera,
-    tag: 'Featured',
-    image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'videography',
-    label: 'Videography',
-    count: '65+ Filmmakers',
-    icon: Video,
-    tag: 'Cinematic',
-    image: 'https://images.unsplash.com/photo-1579632652768-6cb9dcf85912?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'decor',
-    label: 'Decor & Floral Design',
-    count: '85+ Stylists',
-    icon: Flower2,
-    tag: 'Trending',
-    image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'dress',
-    label: 'Bridal & Suits',
-    count: '45+ Boutiques',
-    icon: Shirt,
-    tag: 'Couture',
-    image: 'https://images.unsplash.com/photo-1594552072238-b8a33785b261?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'hair_makeup',
-    label: 'Hair & Makeup',
-    count: '75+ Beauty Artists',
-    icon: Sparkles,
-    tag: 'Beauty',
-    image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'planner',
-    label: 'Event & Wedding Planners',
-    count: '40+ Directors',
-    icon: ClipboardCheck,
-    tag: 'Full Service',
-    image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'nanny',
-    label: 'Nanny & Kids Corner',
-    count: '25+ Childcare Providers',
-    icon: Baby,
-    tag: 'Carefree',
-    image: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'rentals',
-    label: 'Tables, Chairs & Rentals',
-    count: '55+ Rental Companies',
-    icon: Armchair,
-    tag: 'Furniture',
-    image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'cake',
-    label: 'Wedding Cake & Sweets',
-    count: '60+ Patissiers',
-    icon: Cake,
-    tag: 'Artisan',
-    image: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'favors',
-    label: 'Favors & Gifting',
-    count: '50+ Artisans',
-    icon: Gift,
-    tag: 'Keepsakes',
-    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop',
-  },
-  {
-    id: 'photoshoot',
-    label: 'Photoshoot Locations',
-    count: '35+ Exclusive Spots',
-    icon: Aperture,
-    tag: 'Spotlight',
-    image: 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?q=80&w=800&auto=format&fit=crop',
-  },
-];
+import { useLanguage } from '@/context/LanguageContext';
 
 interface CategoriesProps {
   onCategorySelect: (categoryId: string) => void;
 }
 
 export default function Categories({ onCategorySelect }: CategoriesProps) {
+  const { t } = useLanguage();
+
+  const categoriesData = [
+    {
+      id: 'venue',
+      label: t.categories.list.venue.label,
+      count: t.categories.list.venue.count,
+      icon: Building2,
+      tag: t.categories.list.venue.tag,
+      image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'catering',
+      label: t.categories.list.catering.label,
+      count: t.categories.list.catering.count,
+      icon: Utensils,
+      tag: t.categories.list.catering.tag,
+      image: 'https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'photography',
+      label: t.categories.list.photography.label,
+      count: t.categories.list.photography.count,
+      icon: Camera,
+      tag: t.categories.list.photography.tag,
+      image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'videography',
+      label: t.categories.list.videography.label,
+      count: t.categories.list.videography.count,
+      icon: Video,
+      tag: t.categories.list.videography.tag,
+      image: 'https://images.unsplash.com/photo-1579632652768-6cb9dcf85912?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'decor',
+      label: t.categories.list.decor.label,
+      count: t.categories.list.decor.count,
+      icon: Flower2,
+      tag: t.categories.list.decor.tag,
+      image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'dress',
+      label: t.categories.list.dress.label,
+      count: t.categories.list.dress.count,
+      icon: Shirt,
+      tag: t.categories.list.dress.tag,
+      image: 'https://images.unsplash.com/photo-1594552072238-b8a33785b261?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'hair_makeup',
+      label: t.categories.list.hair_makeup.label,
+      count: t.categories.list.hair_makeup.count,
+      icon: Sparkles,
+      tag: t.categories.list.hair_makeup.tag,
+      image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'planner',
+      label: t.categories.list.planner.label,
+      count: t.categories.list.planner.count,
+      icon: ClipboardCheck,
+      tag: t.categories.list.planner.tag,
+      image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'nanny',
+      label: t.categories.list.nanny.label,
+      count: t.categories.list.nanny.count,
+      icon: Baby,
+      tag: t.categories.list.nanny.tag,
+      image: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'rentals',
+      label: t.categories.list.rentals.label,
+      count: t.categories.list.rentals.count,
+      icon: Armchair,
+      tag: t.categories.list.rentals.tag,
+      image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'cake',
+      label: t.categories.list.cake.label,
+      count: t.categories.list.cake.count,
+      icon: Cake,
+      tag: t.categories.list.cake.tag,
+      image: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'favors',
+      label: t.categories.list.favors.label,
+      count: t.categories.list.favors.count,
+      icon: Gift,
+      tag: t.categories.list.favors.tag,
+      image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+      id: 'photoshoot',
+      label: t.categories.list.photoshoot.label,
+      count: t.categories.list.photoshoot.count,
+      icon: Aperture,
+      tag: t.categories.list.photoshoot.tag,
+      image: 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?q=80&w=800&auto=format&fit=crop',
+    },
+  ];
+
   return (
     <section id="categories" className="py-28 bg-sand border-t border-taupe/15 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -139,26 +142,29 @@ export default function Categories({ onCategorySelect }: CategoriesProps) {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-2xl">
             <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block mb-3 font-semibold">
-              Explore Our Supplier Network
+              {t.categories.tag}
             </span>
             <h2 className="font-classico text-3xl sm:text-5xl uppercase font-normal text-charcoal tracking-wide">
-              All event specialists <span className="font-serif-display lowercase italic font-normal text-taupe">in one directory</span>
+              {t.categories.titlePart1}{' '}
+              <span className="font-serif-display lowercase italic font-normal text-taupe">
+                {t.categories.titlePart2}
+              </span>
             </h2>
             <p className="mt-3 text-base text-charcoal/70 leading-relaxed">
-              From enchanting estate grounds to artisan patissiers and award-winning photographers. Add to your combined request with one click.
+              {t.categories.subtext}
             </p>
           </div>
           <div>
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sand-200 text-taupe text-xs font-classico tracking-wider uppercase font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
-              13 Categories • 800+ Verified Partners
+              {t.categories.countBadge}
             </span>
           </div>
         </div>
 
         {/* Categories Grid with Background Photography */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {CATEGORIES.map((cat, index) => {
+          {categoriesData.map((cat, index) => {
             const Icon = cat.icon;
             return (
               <motion.div

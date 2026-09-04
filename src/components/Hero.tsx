@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Star, Sparkles, Compass, ArrowRight } from 'lucide-react';
 import SearchWidget, { SearchState } from './SearchWidget';
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface HeroProps {
   onSearchSubmit: (params: SearchState) => void;
@@ -14,13 +16,14 @@ interface HeroProps {
 
 export default function Hero({ onSearchSubmit }: HeroProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   const heroNavLinks = [
-    { num: '01', name: 'HOME', href: '/' },
-    { num: '02', name: 'WHY LEEMEVENTS', href: '/why-us' },
-    { num: '03', name: 'HOW IT WORKS', href: '/how-it-works' },
-    { num: '04', name: 'SUPPLIERS', href: '/categories' },
-    { num: '05', name: 'ABOUT US', href: '/about' },
+    { num: '01', name: t.nav.home.toUpperCase(), href: '/' },
+    { num: '02', name: t.nav.whyUs.toUpperCase(), href: '/why-us' },
+    { num: '03', name: t.nav.howItWorks.toUpperCase(), href: '/how-it-works' },
+    { num: '04', name: t.nav.suppliers.toUpperCase(), href: '/categories' },
+    { num: '05', name: t.nav.aboutUs.toUpperCase(), href: '/about' },
   ];
 
   return (
@@ -50,14 +53,16 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
         >
           {/* Top Brand Emblem */}
           <div className="space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-taupe/10 text-taupe flex items-center justify-center shadow-soft-sm">
-              <Compass className="w-6 h-6 stroke-[1.5]" />
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-taupe/10 text-taupe flex items-center justify-center shadow-soft-sm">
+                <Compass className="w-6 h-6 stroke-[1.5]" />
+              </div>
+              <LanguageSwitcher variant="navbar" />
             </div>
             <div>
               <span className="font-classico text-2xl font-normal tracking-[0.2em] uppercase text-charcoal block">
                 LEEMEVENTS
               </span>
-
             </div>
           </div>
 
@@ -70,12 +75,13 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
               const isActive = pathname === link.href;
               return (
                 <Link
-                  key={link.name}
+                  key={link.href}
                   href={link.href}
-                  className={`group font-classico text-xs uppercase tracking-[0.25em] transition-all flex items-center justify-between py-2 border-b border-taupe/10 ${isActive
+                  className={`group font-classico text-xs uppercase tracking-[0.25em] transition-all flex items-center justify-between py-2 border-b border-taupe/10 ${
+                    isActive
                       ? 'text-taupe font-semibold pl-2 border-l-2 border-taupe border-b-taupe/30'
                       : 'text-charcoal/75 hover:text-taupe hover:pl-1 font-normal'
-                    }`}
+                  }`}
                 >
                   <span className="flex items-center gap-2">
                     <span className="text-[10px] text-taupe/60 font-mono">{link.num}.</span>
@@ -98,13 +104,13 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
                 />
                 <text className="text-[10px] font-classico tracking-[0.25em] uppercase font-bold text-taupe">
                   <textPath href="#circlePathHero" startOffset="0%">
-                    • WABI SABI • EST 2026 •
+                    {t.hero.wabiSabiBadge}
                   </textPath>
                 </text>
               </svg>
             </div>
             <div className="text-[10px] font-classico tracking-[0.18em] uppercase text-charcoal/60 leading-tight">
-              Curated Earth & Stone Events
+              {t.hero.curatedEvents}
             </div>
           </div>
         </motion.div>
@@ -119,7 +125,7 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sand-100/90 border border-taupe/20 text-taupe text-xs font-classico tracking-[0.2em] uppercase mb-2 shadow-soft-sm"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>The Two-Sided Event Marketplace Platform</span>
+            <span>{t.hero.badge}</span>
           </motion.div>
 
           {/* Main Headline in Classico & Cormorant Garamond */}
@@ -129,7 +135,10 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="font-classico text-4xl sm:text-6xl lg:text-7xl font-normal tracking-wide text-charcoal max-w-4xl leading-[1.15] uppercase text-balance"
           >
-            Every event, <span className="font-serif-display lowercase italic font-normal text-taupe">planned in one place.</span>
+            {t.hero.titlePart1}{' '}
+            <span className="font-serif-display lowercase italic font-normal text-taupe">
+              {t.hero.titlePart2}
+            </span>
           </motion.h1>
 
           {/* Subtext */}
@@ -139,7 +148,7 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-base sm:text-xl text-charcoal/80 max-w-2xl leading-relaxed text-balance"
           >
-            Discover, compare, and book all your event suppliers — venue, catering, photography, videography, decor, hair & makeup, DJ, and cake — on one platform. Submit <strong>1 combined request</strong> and manage everything together.
+            {t.hero.subtext} <strong>{t.hero.subtextHighlight}</strong> {t.hero.subtextEnd}
           </motion.p>
 
           {/* Search Widget Container */}
@@ -161,17 +170,17 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
           >
             <div className="flex items-center gap-2 font-classico tracking-wider uppercase">
               <CheckCircle2 className="w-4 h-4 text-taupe shrink-0" />
-              <span>Verified suppliers</span>
+              <span>{t.hero.verifiedSuppliers}</span>
             </div>
 
             <div className="flex items-center gap-2 font-classico tracking-wider uppercase">
               <CheckCircle2 className="w-4 h-4 text-taupe shrink-0" />
-              <span>Real-time availability</span>
+              <span>{t.hero.realtimeAvailability}</span>
             </div>
 
             <div className="flex items-center gap-2 font-classico tracking-wider uppercase">
               <CheckCircle2 className="w-4 h-4 text-taupe shrink-0" />
-              <span>Combined planning & contract</span>
+              <span>{t.hero.combinedContract}</span>
             </div>
 
             <div className="flex items-center gap-1.5 pl-2 border-l border-taupe/20">
@@ -181,7 +190,7 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
                 ))}
               </div>
               <span className="font-semibold text-charcoal">4.9/5</span>
-              <span className="text-charcoal/60">(480+ events)</span>
+              <span className="text-charcoal/60">{t.hero.ratingText}</span>
             </div>
           </motion.div>
         </div>

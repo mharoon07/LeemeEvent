@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import HostLayout from '@/components/dashboard/HostLayout';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   CalendarDays,
   MapPin,
@@ -16,61 +17,61 @@ import {
   Search,
   ShoppingBag,
   DollarSign,
-  FileText,
   MessageSquare,
   ShieldCheck,
   Check,
-  ArrowRight,
 } from 'lucide-react';
 
 export default function HostDashboardHome() {
+  const { t } = useLanguage();
+
   const currentEvent = {
-    name: "Eleanor & Liam's Country Estate Wedding",
-    type: 'Country Estate Wedding',
-    date: 'Friday, September 18, 2026',
+    name: t.dashboard.hostHome.eventTitle,
+    type: t.dashboard.hostHome.eventType,
+    date: t.dashboard.hostHome.date,
     daysRemaining: 16,
-    location: 'Cotswolds, Oxfordshire, UK',
+    location: t.dashboard.hostHome.location,
     guestCount: 120,
     confirmedSuppliers: 3,
     totalSuppliersNeeded: 8,
-    committedBudget: '$13,400',
-    totalBudget: '$28,500',
+    committedBudget: '€13.400',
+    totalBudget: '€28.500',
   };
 
   const bookingRequests = [
     {
       id: 'req_1',
       supplierName: 'Château de Bellevue Venue',
-      category: 'Venue & Location',
-      price: '$4,500',
-      status: 'Accepted',
+      category: t.categories.list.venue.label,
+      price: '€4.500',
+      status: t.dashboard.hostHome.accepted,
       badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop',
     },
     {
       id: 'req_2',
       supplierName: 'Maison Gourmet Catering',
-      category: 'Catering & Food',
-      price: '$3,800',
-      status: 'Contract Sent',
+      category: t.categories.list.catering.label,
+      price: '€3.800',
+      status: t.dashboard.hostHome.contractSent,
       badgeBg: 'bg-blue-50 text-blue-800 border-blue-200',
       image: 'https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=800&auto=format&fit=crop',
     },
     {
       id: 'req_3',
       supplierName: 'Aura Floral & Styling',
-      category: 'Floral & Decor',
-      price: '$2,200',
-      status: 'Pending',
+      category: t.categories.list.decor.label,
+      price: '€2.200',
+      status: t.dashboard.hostHome.pending,
       badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',
       image: 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?q=80&w=800&auto=format&fit=crop',
     },
     {
       id: 'req_4',
       supplierName: 'Lumière Wedding Photography',
-      category: 'Photography',
-      price: '$2,900',
-      status: 'Accepted',
+      category: t.categories.list.photography.label,
+      price: '€2.900',
+      status: t.dashboard.hostHome.accepted,
       badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?q=80&w=800&auto=format&fit=crop',
     },
@@ -107,20 +108,18 @@ export default function HostDashboardHome() {
   return (
     <HostLayout>
       <div className="space-y-8 sm:space-y-10">
-        {/* ========================================================================= */}
-        {/* PAGE HEADER: ELEGANT GREETING & CONTEXT                                    */}
-        {/* ========================================================================= */}
+        {/* PAGE HEADER */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-stone-200/70">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sand-100 border border-sand-200 text-taupe-700 text-xs font-semibold mb-2">
               <Sparkles className="w-3.5 h-3.5 text-taupe" />
-              <span>Autumn 2026 Celebration Suite</span>
+              <span>{t.dashboard.hostHome.suiteBadge}</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-charcoal tracking-tight">
-              Welcome back, Eleanor
+              {t.dashboard.hostHome.welcome}
             </h1>
             <p className="text-stone-500 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
-              Track vendor contracts, monitor milestone schedules, and manage your unified celebration deposit.
+              {t.dashboard.hostHome.headerDesc}
             </p>
           </div>
 
@@ -130,26 +129,24 @@ export default function HostDashboardHome() {
               className="px-4 py-2.5 rounded-xl border border-stone-200/90 bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-charcoal flex items-center gap-2 shadow-soft-sm transition-all"
             >
               <Search className="w-3.5 h-3.5 text-taupe" />
-              <span>Browse Suppliers</span>
+              <span>{t.dashboard.hostHome.browseBtn}</span>
             </Link>
             <Link
               href="/dashboard/host/cart"
               className="btn-primary px-4 py-2.5 text-xs flex items-center gap-2 shadow-soft-sm hover:shadow-soft-md transition-all"
             >
               <ShoppingBag className="w-3.5 h-3.5 text-sand" />
-              <span>View Cart (3 items)</span>
+              <span>{t.dashboard.hostHome.viewCart}</span>
             </Link>
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* EXECUTIVE KPI STATS STRIP                                                 */}
-        {/* ========================================================================= */}
+        {/* EXECUTIVE KPI STATS STRIP */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-soft-sm hover:border-taupe/40 transition-all">
             <div className="flex items-center justify-between text-stone-400 mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                Booked Vendors
+                {t.dashboard.hostHome.supplierConfirmed}
               </span>
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             </div>
@@ -164,7 +161,7 @@ export default function HostDashboardHome() {
           <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-soft-sm hover:border-taupe/40 transition-all">
             <div className="flex items-center justify-between text-stone-400 mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                Committed Budget
+                {t.dashboard.hostHome.budgetCommitted}
               </span>
               <DollarSign className="w-4 h-4 text-taupe" />
             </div>
@@ -179,12 +176,12 @@ export default function HostDashboardHome() {
           <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-soft-sm hover:border-taupe/40 transition-all">
             <div className="flex items-center justify-between text-stone-400 mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                Action Items
+                {t.dashboard.hostHome.actionRequired}
               </span>
               <Clock className="w-4 h-4 text-amber-600" />
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-charcoal">
-              2 Pending
+              2 {t.dashboard.hostHome.pending}
             </div>
             <span className="text-[11px] text-amber-700 font-semibold block mt-1">
               1 contract ready for review
@@ -199,23 +196,19 @@ export default function HostDashboardHome() {
               <CalendarDays className="w-4 h-4 text-taupe" />
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-charcoal">
-              {currentEvent.daysRemaining} Days
+              {currentEvent.daysRemaining} {t.dashboard.hostHome.daysLeft}
             </div>
             <span className="text-[11px] text-stone-500 font-medium block mt-1">
-              September 18, 2026
+              {currentEvent.date}
             </span>
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* HERO CELEBRATION CARD                                                     */}
-        {/* ========================================================================= */}
+        {/* HERO CELEBRATION CARD */}
         <div className="bg-white border border-stone-200/90 rounded-3xl p-6 sm:p-8 lg:p-9 shadow-soft-sm relative overflow-hidden">
-          {/* Subtle warm decorative gradient corner */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-sand-100/60 via-sand-50/20 to-transparent rounded-full -mr-20 -mt-20 pointer-events-none" />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative">
-            {/* Left Content Column */}
             <div className="lg:col-span-8 space-y-5">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="px-3 py-1 rounded-full bg-taupe/10 text-taupe text-xs font-bold uppercase tracking-wider">
@@ -247,7 +240,7 @@ export default function HostDashboardHome() {
                 </div>
                 <div className="flex items-center gap-2.5 bg-[#FAF8F5] border border-stone-200/70 rounded-xl px-3.5 py-2.5 text-xs text-charcoal">
                   <Users className="w-4 h-4 text-taupe shrink-0" />
-                  <span className="font-semibold">{currentEvent.guestCount} Confirmed Guests</span>
+                  <span className="font-semibold">{currentEvent.guestCount} {t.dashboard.hostHome.guests}</span>
                 </div>
               </div>
 
@@ -255,9 +248,9 @@ export default function HostDashboardHome() {
               <div className="pt-2 space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-charcoal flex items-center gap-2">
-                    <span>Supplier Confirmation Progress</span>
+                    <span>{t.dashboard.hostHome.supplierConfirmed}</span>
                     <span className="text-stone-400 font-normal">
-                      • {currentEvent.confirmedSuppliers} of {currentEvent.totalSuppliersNeeded} Vendors Confirmed
+                      • {currentEvent.confirmedSuppliers} of {currentEvent.totalSuppliersNeeded} Confirmed
                     </span>
                   </span>
                   <span className="font-bold text-taupe">{progressPercent}%</span>
@@ -268,11 +261,6 @@ export default function HostDashboardHome() {
                     className="h-full bg-gradient-to-r from-taupe-500 via-taupe to-charcoal rounded-full transition-all duration-700 shadow-sm"
                     style={{ width: `${progressPercent}%` }}
                   />
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-stone-500 pt-0.5">
-                  <span>Locked: Venue, Catering, Photography</span>
-                  <span className="text-taupe font-semibold">Remaining: DJ, Floral, Cake, Styling</span>
                 </div>
               </div>
             </div>
@@ -287,11 +275,8 @@ export default function HostDashboardHome() {
                   {currentEvent.daysRemaining}
                 </div>
                 <div className="text-xs font-bold text-taupe uppercase tracking-widest mt-1">
-                  Days Until &ldquo;I Do&rdquo;
+                  {t.dashboard.hostHome.daysLeft}
                 </div>
-                <p className="text-[11px] text-stone-400 mt-0.5">
-                  Friday • Cotswolds Country Estate
-                </p>
               </div>
 
               <div className="pt-2">
@@ -299,7 +284,7 @@ export default function HostDashboardHome() {
                   href="/dashboard/host/events"
                   className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-stone-200 text-xs font-semibold text-stone-700 hover:bg-stone-50 hover:text-charcoal transition-colors"
                 >
-                  <span>View Timeline & Schedule</span>
+                  <span>Timeline & Schedule</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
@@ -307,24 +292,19 @@ export default function HostDashboardHome() {
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* SUPPLIER BOOKING REQUESTS: BALANCED 4-COL GRID                             */}
-        {/* ========================================================================= */}
+        {/* SUPPLIER BOOKING REQUESTS */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-bold text-charcoal tracking-tight">
-                Curated Vendor Team
+                {t.dashboard.hostHome.activeRequests}
               </h3>
-              <p className="text-xs text-stone-500 mt-0.5">
-                Review contracts, deposit requests, and direct supplier communication
-              </p>
             </div>
             <Link
               href="/dashboard/host/requests"
               className="text-xs font-semibold text-taupe hover:text-charcoal flex items-center gap-1 transition-colors"
             >
-              <span>View All Requests</span>
+              <span>{t.dashboard.hostHome.viewAll}</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
@@ -389,20 +369,15 @@ export default function HostDashboardHome() {
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* SPLIT SECTION: MILESTONES & CONCIERGE HUB                                 */}
-        {/* ========================================================================= */}
+        {/* SPLIT SECTION: MILESTONES & CONCIERGE HUB */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Milestones / To-Do List */}
           <div className="lg:col-span-7 bg-white border border-stone-200/90 rounded-3xl p-6 sm:p-7 shadow-soft-sm space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-stone-100">
               <div>
                 <h3 className="text-lg font-bold text-charcoal tracking-tight">
-                  Upcoming Host Action Items
+                  {t.dashboard.hostHome.actionRequired}
                 </h3>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  Key planning checkpoints for this week
-                </p>
               </div>
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-stone-100 text-stone-700">
                 Phase 2
@@ -446,13 +421,12 @@ export default function HostDashboardHome() {
             </div>
           </div>
 
-          {/* Concierge Support & Unified Deposit Card */}
+          {/* Unified Deposit Card */}
           <div className="lg:col-span-5 space-y-5">
-            {/* Unified Deposit Card */}
             <div className="bg-gradient-to-br from-charcoal to-[#3B332B] text-white rounded-3xl p-6 sm:p-7 shadow-soft-md space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-amber-200">
-                  Unified Deposit
+                  {t.dashboard.hostHome.contractSummary}
                 </span>
                 <ShieldCheck className="w-5 h-5 text-amber-300" />
               </div>
@@ -469,7 +443,7 @@ export default function HostDashboardHome() {
               <div className="pt-1 flex items-center justify-between border-t border-white/10">
                 <div>
                   <span className="text-[11px] text-stone-400 block">Total Combined Deposit</span>
-                  <span className="text-lg font-bold text-amber-200">$3,400.00</span>
+                  <span className="text-lg font-bold text-amber-200">€3.400,00</span>
                 </div>
 
                 <Link
@@ -480,77 +454,6 @@ export default function HostDashboardHome() {
                 </Link>
               </div>
             </div>
-
-            {/* Need Help Concierge Card */}
-            <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-soft-sm flex items-center justify-between gap-4">
-              <div className="space-y-1">
-                <h5 className="text-xs font-bold text-charcoal">
-                  Need recommendations for DJ or Cake?
-                </h5>
-                <p className="text-[11px] text-stone-500">
-                  Your LEEMEVENTS event specialist is available for custom matchmaking.
-                </p>
-              </div>
-              <Link
-                href="/dashboard/host/messages"
-                className="shrink-0 px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-semibold text-taupe hover:bg-stone-50 transition-colors"
-              >
-                Ask Specialist
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* ========================================================================= */}
-        {/* QUICK ACTION TILES                                                        */}
-        {/* ========================================================================= */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
-          <div className="bg-white border border-stone-200/90 rounded-2xl p-6 space-y-3 shadow-soft-sm hover:shadow-soft-md hover:border-taupe/40 transition-all">
-            <h4 className="text-sm font-bold text-charcoal">
-              Browse 13 Supplier Categories
-            </h4>
-            <p className="text-xs text-stone-500 leading-relaxed">
-              Explore curated wedding vendors including Acoustic Artists, Luxury Transport, Fireworks, and Stationery.
-            </p>
-            <Link
-              href="/dashboard/host/browse"
-              className="btn-primary inline-flex px-3.5 py-2 text-xs font-semibold items-center gap-1.5"
-            >
-              <span>Explore Directory</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="bg-white border border-stone-200/90 rounded-2xl p-6 space-y-3 shadow-soft-sm hover:shadow-soft-md hover:border-taupe/40 transition-all">
-            <h4 className="text-sm font-bold text-charcoal">
-              Contracts & Signed Documents
-            </h4>
-            <p className="text-xs text-stone-500 leading-relaxed">
-              Access digital vendor agreements, liability insurance certificates, and payment invoices in one secure vault.
-            </p>
-            <Link
-              href="/dashboard/host/documents"
-              className="btn-secondary inline-flex px-3.5 py-2 text-xs font-semibold items-center gap-1.5"
-            >
-              <span>Open Document Vault</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="bg-white border border-stone-200/90 rounded-2xl p-6 space-y-3 shadow-soft-sm hover:shadow-soft-md hover:border-taupe/40 transition-all">
-            <h4 className="text-sm font-bold text-charcoal">
-              Collaborative Planning & Team
-            </h4>
-            <p className="text-xs text-stone-500 leading-relaxed">
-              Invite your partner, wedding coordinator, or family members to view supplier selections and budget allocations.
-            </p>
-            <Link
-              href="/dashboard/host/team"
-              className="btn-secondary inline-flex px-3.5 py-2 text-xs font-semibold items-center gap-1.5"
-            >
-              <span>Manage Collaborators</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
           </div>
         </div>
 
