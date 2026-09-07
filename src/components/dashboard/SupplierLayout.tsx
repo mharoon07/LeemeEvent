@@ -49,7 +49,6 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
     { name: t.dashboard.supplierNav.messages, href: '/dashboard/supplier/messages', icon: MessageSquare, badge: '1' },
     { name: t.dashboard.supplierNav.reviews, href: '/dashboard/supplier/reviews', icon: Star, isPhase2: true },
     { name: t.dashboard.supplierNav.earnings, href: '/dashboard/supplier/earnings', icon: TrendingUp },
-    { name: t.dashboard.supplierNav.subscription, href: '/dashboard/supplier/subscription', icon: CreditCard, isPhase2: true },
   ];
 
   const handleLogout = () => {

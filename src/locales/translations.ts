@@ -283,6 +283,39 @@ export interface TranslationDictionary {
     termsLink: string;
     termsNoticePart2: string;
     privacyLink: string;
+    forgotPasswordTitle: string;
+    forgotPasswordSubtext: string;
+    sendOtpButton: string;
+    sendingOtp: string;
+    resetTitle: string;
+    resetSubtext: string;
+    otpActive: string;
+    enterOtpLabel: string;
+    otpCardTitle: string;
+    expiryNotice: string;
+    autoFillBtn: string;
+    otpPromptHint: string;
+    resendPrompt: string;
+    resendIn: string;
+    resendBtn: string;
+    newPasswordLabel: string;
+    newPasswordPlaceholder: string;
+    confirmPasswordLabel: string;
+    confirmPasswordPlaceholder: string;
+    strengthLabel: string;
+    strengthTooShort: string;
+    strengthFair: string;
+    strengthGood: string;
+    strengthStrong: string;
+    passwordsMatch: string;
+    passwordsMismatch: string;
+    resetSaveBtn: string;
+    resettingBtn: string;
+    successTitle: string;
+    successSubtext: string;
+    goToLoginBtn: string;
+    rememberPassword: string;
+    signInHere: string;
   };
 
   // Combined Request Modal
@@ -757,6 +790,39 @@ export const translations: Record<Language, TranslationDictionary> = {
       termsLink: 'Terms of Service',
       termsNoticePart2: 'and',
       privacyLink: 'Privacy Policy',
+      forgotPasswordTitle: 'Forgot Password?',
+      forgotPasswordSubtext: 'Enter the email address registered with your account. We will send a 6-digit OTP verification code.',
+      sendOtpButton: 'Send 6-Digit Verification Code',
+      sendingOtp: 'Sending OTP Code...',
+      resetTitle: 'Reset Your Password',
+      resetSubtext: 'Enter the 6-digit verification code sent to your email and set your new password.',
+      otpActive: 'OTP Verification Active',
+      enterOtpLabel: 'Enter the 6-Digit Code',
+      otpCardTitle: 'Your Verification Code (OTP)',
+      expiryNotice: '15 Min Expiry',
+      autoFillBtn: 'Auto-Fill',
+      otpPromptHint: 'View the code above and enter it in the boxes below:',
+      resendPrompt: "Didn't receive code?",
+      resendIn: 'Resend in',
+      resendBtn: 'Resend Code',
+      newPasswordLabel: 'New Password *',
+      newPasswordPlaceholder: 'Minimum 6 characters',
+      confirmPasswordLabel: 'Confirm New Password *',
+      confirmPasswordPlaceholder: 'Re-type new password',
+      strengthLabel: 'Strength',
+      strengthTooShort: 'Too short',
+      strengthFair: 'Fair',
+      strengthGood: 'Good',
+      strengthStrong: 'Strong',
+      passwordsMatch: '✓ Passwords match',
+      passwordsMismatch: '✕ Passwords do not match',
+      resetSaveBtn: 'Reset Password & Save',
+      resettingBtn: 'Resetting Password...',
+      successTitle: 'Password Successfully Changed',
+      successSubtext: 'Your login credentials have been securely updated. Taking you to the sign in page...',
+      goToLoginBtn: 'Go to Sign In Now',
+      rememberPassword: 'Remember your password?',
+      signInHere: 'Sign In here',
     },
     modal: {
       title: 'Combined Event Request',
@@ -1226,6 +1292,39 @@ export const translations: Record<Language, TranslationDictionary> = {
       termsLink: 'Algemene Voorwaarden',
       termsNoticePart2: 'en',
       privacyLink: 'Privacybeleid',
+      forgotPasswordTitle: 'Wachtwoord Vergeten?',
+      forgotPasswordSubtext: 'Voer het e-mailadres in dat bij uw account is geregistreerd. We sturen een 6-cijferige verificatiecode.',
+      sendOtpButton: 'Verzend 6-Cijferige Verificatiecode',
+      sendingOtp: 'Verificatiecode verzenden...',
+      resetTitle: 'Stel Uw Wachtwoord Opnieuw In',
+      resetSubtext: 'Voer de 6-cijferige verificatiecode in en stel uw nieuwe wachtwoord in.',
+      otpActive: 'OTP-Verificatie Actief',
+      enterOtpLabel: 'Voer de 6-Cijferige Code In',
+      otpCardTitle: 'Uw Verificatiecode (OTP)',
+      expiryNotice: '15 Min Geldig',
+      autoFillBtn: 'Automatisch Invullen',
+      otpPromptHint: 'Bekijk de bovenstaande code en voer deze hieronder in:',
+      resendPrompt: 'Geen code ontvangen?',
+      resendIn: 'Opnieuw verzenden over',
+      resendBtn: 'Code Opnieuw Verzenden',
+      newPasswordLabel: 'Nieuw Wachtwoord *',
+      newPasswordPlaceholder: 'Minimaal 6 tekens',
+      confirmPasswordLabel: 'Bevestig Nieuw Wachtwoord *',
+      confirmPasswordPlaceholder: 'Typ nieuw wachtwoord opnieuw',
+      strengthLabel: 'Sterkte',
+      strengthTooShort: 'Te kort',
+      strengthFair: 'Matig',
+      strengthGood: 'Goed',
+      strengthStrong: 'Sterk',
+      passwordsMatch: '✓ Wachtwoorden komen overeen',
+      passwordsMismatch: '✕ Wachtwoorden komen niet overeen',
+      resetSaveBtn: 'Wachtwoord Opnieuw Instellen & Opslaan',
+      resettingBtn: 'Wachtwoord bijwerken...',
+      successTitle: 'Wachtwoord Succesvol Gewijzigd',
+      successSubtext: 'Uw inloggegevens zijn veilig bijgewerkt. U wordt doorgestuurd naar de inlogpagina...',
+      goToLoginBtn: 'Ga Nu Naar Inloggen',
+      rememberPassword: 'Weet u uw wachtwoord weer?',
+      signInHere: 'Hier inloggen',
     },
     modal: {
       title: 'Gecombineerde Evenementenaanvraag',

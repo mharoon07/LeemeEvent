@@ -1,171 +1,324 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import HostLayout from '@/components/dashboard/HostLayout';
-import { ShoppingBag, Trash2, Sparkles, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
+import {
+  bookingsApi,
+  paymentsApi,
+  decodeServiceDescription,
+  normalizeCategory
+} from '@/lib/services/consumerApi';
+import { PaymentItem } from '@/types/api';
+import {
+  ShoppingBag,
+  Trash2,
+  Sparkles,
+  CheckCircle2,
+  ShieldCheck,
+  ArrowRight,
+  Lock,
+  CreditCard,
+  Loader2,
+  Check,
+  History,
+  RefreshCw,
+  Building2,
+  Package
+} from 'lucide-react';
 
 export default function HostCartPage() {
-  const [items, setItems] = useState([
-    {
-      id: 'cart_1',
-      name: 'Château de Bellevue',
-      category: 'Venue & Location',
-      price: 4500,
-      image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-      id: 'cart_2',
-      name: 'Maison Gourmet Catering (120 guests)',
-      category: 'Catering & Food',
-      price: 3800,
-      image: 'https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-      id: 'cart_3',
-      name: 'Lumière Wedding Photography',
-      category: 'Photography',
-      price: 2900,
-      image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?q=80&w=800&auto=format&fit=crop',
-    },
-  ]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentItem[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState('ideal_card');
+  const [paying, setPaying] = useState(false);
+  const [paySuccess, setPaySuccess] = useState<any>(null);
 
-  const [sent, setSent] = useState(false);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [bookData, payData] = await Promise.all([
+        bookingsApi.getMyBookings(),
+        paymentsApi.getPayments(),
+      ]);
 
-  const removeItem = (id: string) => {
-    setItems(items.filter((i) => i.id !== id));
+      setBookings(bookData || []);
+      setPaymentHistory(payData || []);
+    } catch (err) {
+      console.error('Failed to load cart and payment data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const totalAmount = items.reduce((acc, item) => acc + item.price, 0);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Filter items that are in inquiry, accepted, or ready for checkout
+  const activeBookings = bookings.filter((b) => {
+    const st = (b.status || 'pending').toLowerCase();
+    return st !== 'cancelled';
+  });
+
+  const totalAmount = activeBookings.reduce((acc, item) => {
+    return acc + Number(item.quote_amount || item.service?.base_price || 0);
+  }, 0);
+
+  const deposit20Amount = Math.round(totalAmount * 0.20);
+  const remaining80Amount = totalAmount - deposit20Amount;
+
+  const handlePayEscrowDeposit = async () => {
+    if (activeBookings.length === 0) return;
+    setPaying(true);
+    try {
+      const firstBooking = activeBookings[0];
+      const result = await paymentsApi.payDeposit({
+        booking_id: firstBooking.id,
+        amount: deposit20Amount,
+        payment_method: paymentMethod,
+      });
+      setPaySuccess(result);
+      const updatedLedger = await paymentsApi.getPayments();
+      setPaymentHistory(updatedLedger);
+    } catch (err) {
+      console.error('Payment error', err);
+    } finally {
+      setPaying(false);
+    }
+  };
 
   return (
     <HostLayout>
-      <div className="space-y-8">
-        <div>
-          <span className="text-xs font-semibold text-taupe block">
-            Combined Proposal Summary
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
-            My Selected Supplier Package
-          </h1>
+      <div className="space-y-8 max-w-6xl mx-auto pb-16">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-stone-200/80">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-taupe uppercase tracking-wider mb-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Escrow Protected Checkout • Synced with Database</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
+              Booked Services & 20% Escrow Checkout
+            </h1>
+            <p className="text-xs sm:text-sm text-stone-500 mt-1">
+              Lock in your requested specialist services in 1 single unified Escrow transaction. Funds are safely held until post-event delivery.
+            </p>
+          </div>
+
+          <button
+            onClick={loadData}
+            className="p-3 rounded-2xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors self-start md:self-auto"
+            title="Refresh Bookings"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
 
-        {!sent ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Selected Items List */}
-            <div className="lg:col-span-8 space-y-4">
-              {items.length > 0 ? (
-                items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-white border border-stone-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-soft-sm hover:border-taupe/40 transition-all"
-                  >
-                    <div className="flex items-center gap-4 w-full sm:w-auto">
-                      <div className="relative h-20 w-24 rounded-xl overflow-hidden shrink-0">
-                        <Image src={item.image} alt={item.name} fill className="object-cover" />
+        {/* Success Banner */}
+        {paySuccess && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-soft-sm">
+                <Check className="w-6 h-6 stroke-[3]" />
+              </div>
+              <div>
+                <h3 className="font-bold text-emerald-950 text-lg">20% Escrow Deposit Secured!</h3>
+                <p className="text-xs text-emerald-800 mt-0.5">
+                  Ref: <span className="font-mono font-bold">{paySuccess.transaction_ref}</span> • Funds are locked under LEEMEVENT Escrow protection.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/dashboard/host/requests"
+              className="px-5 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold transition-colors shadow-soft-sm text-center"
+            >
+              View Inquiries & Status
+            </Link>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Booked Services */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-charcoal tracking-tight flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-taupe" />
+                <span>Selected Specialist Services ({activeBookings.length})</span>
+              </h2>
+              <Link
+                href="/dashboard/host/browse"
+                className="text-xs font-bold text-taupe hover:underline flex items-center gap-1"
+              >
+                <span>+ Add More Services</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {loading ? (
+              <div className="py-16 text-center space-y-3 bg-white rounded-3xl border border-stone-200 p-6">
+                <div className="w-8 h-8 border-2 border-taupe border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs text-stone-500 font-medium">Loading booked services...</p>
+              </div>
+            ) : activeBookings.length === 0 ? (
+              <div className="bg-white border border-dashed border-stone-300 rounded-3xl p-10 text-center space-y-3 shadow-soft-sm">
+                <Package className="w-10 h-10 text-stone-300 mx-auto" />
+                <h3 className="font-bold text-charcoal text-base">No services booked yet</h3>
+                <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                  Browse verified specialist services and click &quot;Book / Inquire&quot; to add packages to your reservation list.
+                </p>
+                <Link
+                  href="/dashboard/host/browse"
+                  className="inline-flex items-center gap-2 btn-primary px-5 py-2.5 text-xs font-bold shadow-soft-sm"
+                >
+                  <span>Explore Marketplace</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activeBookings.map((b) => {
+                  const srv = b.service;
+                  const { text: cleanDesc, image_url: srvImg } = decodeServiceDescription(srv?.description);
+                  const sup = b.supplier || srv?.supplier;
+                  const supName = sup?.business_name || sup?.name || 'Verified Supplier';
+                  const price = Number(b.quote_amount || srv?.base_price || 1500);
+                  const st = (b.status || 'pending').toLowerCase();
+                  const isAccepted = st === 'accepted' || st === 'availability_confirmed';
+
+                  const image =
+                    srvImg ||
+                    srv?.image ||
+                    sup?.avatar_url ||
+                    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop';
+
+                  return (
+                    <div
+                      key={b.id}
+                      className="bg-white border border-stone-200/90 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-4 shadow-soft-sm hover:border-taupe/40 transition-all"
+                    >
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="relative h-16 w-20 rounded-2xl overflow-hidden shrink-0 bg-stone-100 shadow-sm">
+                          <Image src={image} alt={srv?.name || supName} fill className="object-cover" />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[10px] font-bold text-taupe uppercase tracking-wider block">
+                            {normalizeCategory(sup?.category || 'Specialist')}
+                          </span>
+                          <h4 className="font-bold text-charcoal text-sm truncate">
+                            {srv?.name || 'Custom Celebration Package'}
+                          </h4>
+                          <span className="text-xs text-stone-500 truncate block mt-0.5">
+                            by <strong>{supName}</strong> • {b.requested_date || 'Date TBD'}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-xs text-taupe font-semibold uppercase tracking-wider block">
-                          {item.category}
-                        </span>
-                        <h4 className="text-base font-bold text-charcoal">
-                          {item.name}
-                        </h4>
-                        <span className="font-mono text-sm font-bold text-taupe">
-                          ${item.price.toLocaleString()}
+
+                      <div className="text-right shrink-0">
+                        <div className="text-sm font-bold text-charcoal font-mono">
+                          €{price.toLocaleString()}
+                        </div>
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border mt-1 ${
+                            isAccepted
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                              : 'bg-amber-100 text-amber-800 border-amber-300'
+                          }`}
+                        >
+                          {isAccepted ? 'Accepted' : 'Inquiry Pending'}
                         </span>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.id)}
-                      className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors self-end sm:self-center"
-                      title="Remove from request"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="bg-white border border-stone-200/90 rounded-3xl p-12 text-center space-y-4 shadow-soft-sm">
-                  <div className="w-14 h-14 rounded-2xl bg-taupe/10 text-taupe flex items-center justify-center mx-auto">
-                    <ShoppingBag className="w-7 h-7 stroke-[1.5]" />
-                  </div>
-                  <h3 className="text-xl font-bold text-charcoal">Your Selection is Empty</h3>
-                  <p className="text-sm text-stone-500">Browse our directory to add suppliers to your combined proposal.</p>
-                  <Link href="/dashboard/host/browse" className="btn-primary inline-flex px-6 py-2.5 text-sm font-semibold">
-                    Browse Suppliers Directory
-                  </Link>
-                </div>
-              )}
-            </div>
+          {/* Right Column: Checkout Summary Box */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="bg-white border border-stone-200/90 rounded-3xl p-6 sm:p-7 shadow-soft-sm space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                <h3 className="font-bold text-charcoal text-base">Escrow Payment Summary</h3>
+                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  Escrow Guarantee
+                </span>
+              </div>
 
-            {/* Price Summary & Checkout Panel */}
-            <div className="lg:col-span-4 bg-white border border-stone-200/90 rounded-3xl p-6 space-y-6 shadow-soft-sm">
-              <h3 className="text-lg font-bold text-charcoal border-b border-stone-100 pb-4">
-                Request Summary
-              </h3>
-
-              <div className="space-y-3 text-xs text-stone-600">
-                <div className="flex justify-between">
-                  <span>Selected Suppliers ({items.length})</span>
-                  <span className="font-mono font-bold text-charcoal">${totalAmount.toLocaleString()}</span>
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between text-stone-600">
+                  <span>Total Agreed Services Value</span>
+                  <span className="font-bold text-charcoal font-mono text-sm">€{totalAmount.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>LEEMEVENTS Concierge Match</span>
-                  <span className="text-emerald-700 font-bold">FREE</span>
+                <div className="flex items-center justify-between text-stone-600">
+                  <span>Required Advance Lock (20%)</span>
+                  <span className="font-bold text-emerald-700 font-mono text-sm">€{deposit20Amount.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>1 Consolidated Agreement</span>
-                  <span className="text-emerald-700 font-bold">Included</span>
+                <div className="flex items-center justify-between text-stone-600">
+                  <span>Post-Event Release Balance (80%)</span>
+                  <span className="font-bold text-charcoal font-mono text-sm">€{remaining80Amount.toLocaleString()}</span>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-stone-100 space-y-1">
-                <div className="flex justify-between text-sm font-bold text-charcoal">
-                  <span>Estimated Package Total</span>
-                  <span className="font-mono text-lg font-bold text-taupe">${totalAmount.toLocaleString()}</span>
+              <div className="p-4 bg-sand-50 rounded-2xl border border-stone-200/80 space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-charcoal block">
+                  Select Protected Payment Method
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('ideal_card')}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                      paymentMethod === 'ideal_card'
+                        ? 'bg-charcoal text-white border-charcoal'
+                        : 'bg-white text-stone-600 border-stone-200'
+                    }`}
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Credit / Debit</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('bank_escrow')}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                      paymentMethod === 'bank_escrow'
+                        ? 'bg-charcoal text-white border-charcoal'
+                        : 'bg-white text-stone-600 border-stone-200'
+                    }`}
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>iDEAL / Bank</span>
+                  </button>
                 </div>
-                <span className="text-xs text-stone-500 block">Includes date hold & partner availability sync</span>
               </div>
 
               <button
                 type="button"
-                disabled={items.length === 0}
-                onClick={() => setSent(true)}
-                className="w-full btn-primary py-3.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 shadow-soft-sm hover:shadow-soft-md transition-all"
+                onClick={handlePayEscrowDeposit}
+                disabled={activeBookings.length === 0 || paying}
+                className="w-full btn-primary py-3.5 text-xs font-bold flex items-center justify-center gap-2 rounded-2xl shadow-soft-sm hover:scale-[1.01] transition-transform disabled:opacity-50"
               >
-                <Sparkles className="w-4 h-4 text-white" />
-                <span>Send Combined Request</span>
+                {paying ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Securing Deposit in Escrow...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 text-sand" />
+                    <span>Pay 20% Deposit (€{deposit20Amount.toLocaleString()}) via Escrow</span>
+                  </>
+                )}
               </button>
 
-              <div className="flex items-center justify-center gap-2 text-xs text-charcoal/60 pt-2">
-                <ShieldCheck className="w-4 h-4 text-taupe shrink-0" />
-                <span>Zero payment due until suppliers accept your date</span>
+              <div className="text-[11px] text-stone-500 text-center leading-snug">
+                🔒 Protected by <strong>LEEMEVENT Digital Escrow</strong>. Suppliers receive payment only after satisfactory delivery.
               </div>
             </div>
           </div>
-        ) : (
-          <div className="bg-sand-50 border border-taupe/20 rounded-3xl p-12 text-center space-y-4 max-w-xl mx-auto shadow-soft-sm">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-8 h-8 stroke-[3]" />
-            </div>
-            <h2 className="text-2xl font-bold text-charcoal">
-              Combined Request Sent!
-            </h2>
-            <p className="text-sm text-charcoal/80 leading-relaxed font-sans">
-              Your request for <strong>{items.length} suppliers</strong> (${totalAmount.toLocaleString()} total package) has been transmitted. Your assigned matchmaker will monitor responses.
-            </p>
-            <div className="pt-4">
-              <Link href="/dashboard/host/requests" className="btn-primary px-8 py-3 text-sm font-medium inline-flex items-center gap-2">
-                <span>Track Booking Status</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </HostLayout>
   );

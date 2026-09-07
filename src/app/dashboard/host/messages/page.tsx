@@ -1,155 +1,543 @@
 'use client';
 
-import React, { useState } from 'react';
-import Image from 'next/image';
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import HostLayout from '@/components/dashboard/HostLayout';
-import { Send, Image as ImageIcon, Paperclip, CheckCheck } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { messagesApi } from '@/lib/services/consumerApi';
+import {
+  Send,
+  Sparkles,
+  MessageSquare,
+  Search,
+  CheckCheck,
+  Building2,
+  Mail,
+  User,
+  RefreshCw,
+  Loader2,
+  Calendar,
+  CheckCircle2,
+  ArrowRight,
+  ShieldCheck,
+  SearchCheck,
+  ShoppingBag
+} from 'lucide-react';
+
+interface ConversationThread {
+  partner_id: string;
+  partner_email: string;
+  partner_name: string;
+  partner_role: 'supplier' | 'consumer';
+  last_message: string;
+  last_message_time: string;
+  last_sender_role: string;
+  booking_id?: string;
+  service_name?: string;
+  unread_count: number;
+}
+
+interface ChatMessage {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  sender_email: string;
+  sender_role: 'consumer' | 'supplier' | 'admin';
+  recipient_id: string;
+  recipient_name: string;
+  recipient_email: string;
+  recipient_role: 'consumer' | 'supplier' | 'admin';
+  content: string;
+  booking_id?: string;
+  service_name?: string;
+  is_read: boolean;
+  created_at: string;
+}
 
 export default function HostMessagesPage() {
-  const [activeChat, setActiveChat] = useState('chat_1');
+  const { user, isLoading: authLoading } = useAuth();
+
+  const [threads, setThreads] = useState<ConversationThread[]>([]);
+  const [activePartner, setActivePartner] = useState<ConversationThread | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
+  const [loadingThreads, setLoadingThreads] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const threads = [
-    {
-      id: 'chat_1',
-      name: 'Château de Bellevue Venue',
-      role: 'Venue Partner',
-      unread: 1,
-      lastMessage: 'We have reserved the Courtyard for your evening reception!',
-      time: '10:42 AM',
-      avatar: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=400&auto=format&fit=crop',
-    },
-    {
-      id: 'chat_2',
-      name: 'Lumière Wedding Photography',
-      role: 'Lead Photographer',
-      unread: 0,
-      lastMessage: 'Looking forward to capturing your sunset portraits!',
-      time: 'Yesterday',
-      avatar: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?q=80&w=400&auto=format&fit=crop',
-    },
-  ];
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const isUserScrolledUpRef = useRef<boolean>(false);
 
-  const messages = [
-    { id: 'm1', sender: 'supplier', text: 'Hello Eleanor! We are excited to host your wedding at Château de Bellevue on Sept 18, 2026.', time: '10:30 AM' },
-    { id: 'm2', sender: 'host', text: 'Hi! Could we arrange a tasting for 4 guests next month?', time: '10:35 AM' },
-    { id: 'm3', sender: 'supplier', text: 'We have reserved the Courtyard for your evening reception!', time: '10:42 AM' },
-  ];
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  };
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleContainerScroll = () => {
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      isUserScrolledUpRef.current = scrollHeight - scrollTop - clientHeight > 80;
+    }
+  };
+
+  // 1. URL Query Param Support (When navigating from a specific booking request)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const supplierId = params.get('supplierId');
+      const supplierEmail = params.get('supplierEmail');
+      const supplierName = params.get('supplierName');
+
+      if (supplierId || supplierEmail) {
+        const directThread: ConversationThread = {
+          partner_id: supplierId || supplierEmail || '',
+          partner_email: supplierEmail || '',
+          partner_name: supplierName || supplierEmail?.split('@')[0] || 'Specialist Partner',
+          partner_role: 'supplier',
+          last_message: 'Booking consultation inquiry',
+          last_message_time: new Date().toISOString(),
+          last_sender_role: 'consumer',
+          unread_count: 0,
+        };
+        setActivePartner(directThread);
+        setThreads((prev) => {
+          const exists = prev.some(
+            (t) =>
+              (t.partner_id && t.partner_id === directThread.partner_id) ||
+              (t.partner_email && directThread.partner_email && t.partner_email.toLowerCase() === directThread.partner_email.toLowerCase())
+          );
+          return exists ? prev : [directThread, ...prev];
+        });
+      }
+    }
+  }, []);
+
+  // 2. Load Real Conversations
+  const loadConversations = async (autoSelectFirst = false) => {
+    if (authLoading || !user?.email) return;
+    try {
+      const list = await messagesApi.getConversations();
+      
+      setThreads((prev) => {
+        const currentList = list || [];
+        if (activePartner && !currentList.some((t: ConversationThread) =>
+          (t.partner_id && t.partner_id === activePartner.partner_id) ||
+          (t.partner_email && activePartner.partner_email && t.partner_email.toLowerCase() === activePartner.partner_email.toLowerCase())
+        )) {
+          return [activePartner, ...currentList];
+        }
+        return currentList;
+      });
+
+      if (list && list.length > 0 && autoSelectFirst && !activePartner) {
+        setActivePartner(list[0]);
+      } else if ((!list || list.length === 0) && !activePartner) {
+        setActivePartner(null);
+      }
+    } catch (err) {
+      console.error('Error loading conversations:', err);
+    } finally {
+      setLoadingThreads(false);
+    }
+  };
+
+  // 3. Load Thread Messages
+  const loadThreadMessages = async (partner: ConversationThread, forceScroll = false) => {
+    if (!partner || (!partner.partner_id && !partner.partner_email)) return;
+    try {
+      const msgs = await messagesApi.getThread(partner.partner_id, partner.partner_email);
+      setMessages(msgs || []);
+      if (forceScroll || !isUserScrolledUpRef.current) {
+        setTimeout(scrollToBottom, 30);
+      }
+    } catch (err) {
+      console.error('Error loading thread messages:', err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  // 4. Initial Load
+  useEffect(() => {
+    if (!authLoading && user?.email) {
+      setLoadingThreads(true);
+      loadConversations(true);
+    }
+  }, [user?.id, user?.email, authLoading]);
+
+  // 5. Active Partner Changed
+  useEffect(() => {
+    if (activePartner && (activePartner.partner_id || activePartner.partner_email)) {
+      setLoadingMessages(true);
+      isUserScrolledUpRef.current = false;
+      loadThreadMessages(activePartner, true);
+    } else {
+      setMessages([]);
+    }
+  }, [activePartner?.partner_id, activePartner?.partner_email]);
+
+  // 6. Silent Background Polling
+  useEffect(() => {
+    if (!activePartner) return;
+    const interval = setInterval(() => {
+      loadThreadMessages(activePartner, false);
+      loadConversations(false);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [activePartner?.partner_id, activePartner?.partner_email]);
+
+  // 7. Send Message
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || !activePartner || sending) return;
+
+    const messageText = inputText.trim();
     setInputText('');
+    setSending(true);
+
+    try {
+      const newMsg = await messagesApi.sendMessage({
+        recipient_id: activePartner.partner_id || activePartner.partner_email,
+        recipient_email: activePartner.partner_email || '',
+        recipient_name: activePartner.partner_name || 'Specialist Partner',
+        content: messageText,
+        booking_id: activePartner.booking_id,
+        service_name: activePartner.service_name,
+      });
+
+      if (newMsg) {
+        isUserScrolledUpRef.current = false;
+        setMessages((prev) => [...prev, newMsg]);
+        setTimeout(scrollToBottom, 30);
+        await loadConversations(false);
+      }
+    } catch (err: any) {
+      console.error('Failed to send message:', err);
+      alert(`Could not send message: ${err?.message || 'Please try again.'}`);
+      setInputText(messageText);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const filteredThreads = threads.filter((t) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      t.partner_name.toLowerCase().includes(q) ||
+      t.partner_email.toLowerCase().includes(q) ||
+      t.last_message.toLowerCase().includes(q)
+    );
+  });
+
+  const formatMessageTime = (isoString: string) => {
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
   };
 
   return (
     <HostLayout>
-      <div className="space-y-6">
-        <div>
-          <span className="text-xs font-semibold text-taupe block">
-            Communication Hub
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
-            Supplier Messages
-          </h1>
-        </div>
-
-        <div className="bg-white border border-stone-200/90 rounded-3xl overflow-hidden shadow-soft-sm grid grid-cols-1 lg:grid-cols-12 min-h-[540px]">
-          
-          {/* Thread List Column */}
-          <div className="lg:col-span-4 border-r border-stone-200/80 bg-[#FAF8F5] p-4 space-y-3">
-            <span className="text-xs font-semibold text-taupe uppercase tracking-wider block px-2">
-              Active Conversations
-            </span>
-
-            {threads.map((chat) => (
-              <button
-                key={chat.id}
-                type="button"
-                onClick={() => setActiveChat(chat.id)}
-                className={`w-full p-3 rounded-2xl text-left transition-all flex items-center gap-3 ${
-                  activeChat === chat.id
-                    ? 'bg-white text-charcoal shadow-soft-sm border border-stone-200/90 font-semibold'
-                    : 'hover:bg-white/60 text-stone-700'
-                }`}
-              >
-                <div className="relative h-11 w-11 rounded-full overflow-hidden shrink-0 shadow-sm">
-                  <Image src={chat.avatar} alt={chat.name} fill className="object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-charcoal truncate">
-                      {chat.name}
-                    </h4>
-                    <span className="text-[10px] text-stone-400">{chat.time}</span>
-                  </div>
-                  <p className="text-xs text-stone-500 truncate mt-0.5">
-                    {chat.lastMessage}
-                  </p>
-                </div>
-              </button>
-            ))}
+      <div className="space-y-5 max-w-7xl mx-auto pb-8">
+        {/* Top Header Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-stone-200/90 rounded-3xl p-5 sm:p-6 shadow-soft-sm">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-taupe/15 text-taupe">
+                Real-Time Messaging
+              </span>
+              <span className="text-xs text-stone-500 font-medium">Verified Supplier Consultations</span>
+            </div>
+            <h1 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-charcoal mt-1">
+              Host & Supplier Communication
+            </h1>
+            <p className="text-xs text-stone-500 max-w-xl mt-0.5">
+              Chat directly with specialists for your booked services. Discuss bespoke adjustments, event schedules, and reservation specifics.
+            </p>
           </div>
 
-          {/* Chat Window Column */}
-          <div className="lg:col-span-8 flex flex-col justify-between p-6 bg-white">
-            {/* Chat Header */}
-            <div className="pb-4 border-b border-stone-100 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-charcoal tracking-tight">
-                  Château de Bellevue Venue
-                </h3>
-                <span className="text-xs text-taupe font-medium">Assigned Account Representative</span>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => {
+                loadConversations(false);
+                if (activePartner) loadThreadMessages(activePartner, false);
+              }}
+              className="p-2.5 rounded-2xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors shadow-soft-sm"
+              title="Refresh Chat"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+            <Link
+              href="/dashboard/host/browse"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-charcoal text-white text-xs sm:text-sm font-semibold hover:bg-taupe transition-all shadow-soft-sm"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Browse Marketplace</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* MAIN CHAT INTERFACE: 2-COLUMN LUXURY STUDIO */}
+        <div className="bg-white border border-stone-200/90 rounded-3xl overflow-hidden shadow-soft-sm grid grid-cols-1 lg:grid-cols-12 h-[calc(100vh-220px)] min-h-[560px] max-h-[750px]">
+          {/* LEFT COLUMN: ACTIVE THREADS LIST (4 COLS) */}
+          <div className="lg:col-span-4 border-r border-stone-200/80 bg-stone-50/50 p-4 flex flex-col justify-between h-full overflow-hidden">
+            <div className="space-y-3 flex-1 flex flex-col min-h-0">
+              {/* Search Bar */}
+              <div className="relative shrink-0">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search chats or emails..."
+                  className="w-full pl-8 pr-3 py-2 bg-white border border-stone-200 rounded-xl text-xs text-charcoal focus:outline-none focus:border-taupe"
+                />
               </div>
-              <span className="px-3 py-1 rounded-full text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Online</span>
-              </span>
+
+              <div className="flex items-center justify-between px-1 pt-1 shrink-0">
+                <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                  Booked Conversations ({filteredThreads.length})
+                </span>
+                <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Sync
+                </span>
+              </div>
+
+              {/* Thread Cards List */}
+              <div className="space-y-2 overflow-y-auto flex-1 pr-1">
+                {loadingThreads ? (
+                  <div className="py-12 text-center space-y-2">
+                    <Loader2 className="w-6 h-6 animate-spin text-taupe mx-auto" />
+                    <p className="text-xs text-stone-400">Loading your conversations...</p>
+                  </div>
+                ) : filteredThreads.length === 0 ? (
+                  <div className="py-12 px-4 text-center space-y-3 bg-white border border-dashed border-stone-200 rounded-2xl">
+                    <MessageSquare className="w-8 h-8 text-stone-300 mx-auto" />
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-charcoal">No active conversations</p>
+                      <p className="text-[11px] text-stone-500 leading-relaxed">
+                        When you book a service or send a booking inquiry, your direct consultation thread with the supplier will appear here.
+                      </p>
+                    </div>
+                    <Link
+                      href="/dashboard/host/browse"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-charcoal text-white text-xs font-semibold hover:bg-taupe transition-colors shadow-soft-sm"
+                    >
+                      <SearchCheck className="w-3.5 h-3.5" />
+                      <span>Book a Service</span>
+                    </Link>
+                  </div>
+                ) : (
+                  filteredThreads.map((thread) => {
+                    const isSelected =
+                      activePartner?.partner_id === thread.partner_id ||
+                      (activePartner?.partner_email &&
+                        activePartner.partner_email.toLowerCase() === thread.partner_email.toLowerCase());
+
+                    return (
+                      <button
+                        key={thread.partner_id || thread.partner_email}
+                        type="button"
+                        onClick={() => {
+                          isUserScrolledUpRef.current = false;
+                          setActivePartner(thread);
+                        }}
+                        className={`w-full p-3 rounded-2xl text-left transition-all flex items-start gap-3 border ${
+                          isSelected
+                            ? 'bg-white border-taupe shadow-soft-sm text-charcoal ring-1 ring-taupe/30'
+                            : 'bg-white/80 border-stone-200/70 hover:bg-white hover:border-stone-300 text-stone-700'
+                        }`}
+                      >
+                        {/* Supplier Avatar Icon */}
+                        <div className="w-9 h-9 rounded-xl bg-charcoal text-sand flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                          <Building2 className="w-4 h-4 text-amber-300" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-charcoal truncate">
+                              {thread.partner_name}
+                            </h4>
+                            <span className="text-[10px] text-stone-400">
+                              {formatMessageTime(thread.last_message_time)}
+                            </span>
+                          </div>
+
+                          <span className="text-[10px] text-taupe font-semibold block truncate">
+                            {thread.partner_email || 'Verified Partner'}
+                          </span>
+
+                          <p className="text-xs text-stone-500 truncate mt-0.5">
+                            {thread.last_message}
+                          </p>
+
+                          {thread.unread_count > 0 && (
+                            <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500 text-white shadow-sm">
+                              {thread.unread_count} new
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
-            {/* Message History */}
-            <div className="py-6 space-y-4 flex-1 overflow-y-auto max-h-[360px]">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`flex ${m.sender === 'host' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-md p-4 rounded-2xl text-xs sm:text-sm space-y-1 ${
-                      m.sender === 'host'
-                        ? 'bg-charcoal text-white rounded-br-none shadow-soft-sm'
-                        : 'bg-[#FAF8F5] border border-stone-200/80 text-charcoal rounded-bl-none shadow-sm'
-                    }`}
-                  >
-                    <p>{m.text}</p>
-                    <span
-                      className={`text-[10px] block text-right ${
-                        m.sender === 'host' ? 'text-stone-300' : 'text-stone-400'
-                      }`}
-                    >
-                      {m.time}
+            {/* Bottom Current User Identity Badge */}
+            <div className="pt-3 border-t border-stone-200/80 flex items-center gap-2.5 shrink-0 mt-2">
+              <div className="w-8 h-8 rounded-full bg-sand-200 text-taupe flex items-center justify-center font-bold text-xs shrink-0">
+                <User className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] text-stone-400 font-bold uppercase block">Logged in Host:</span>
+                <span className="text-xs font-bold text-charcoal truncate block">{user?.name || 'Consumer Host'}</span>
+                <span className="text-[10px] text-stone-500 truncate block">{user?.email}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: ACTIVE CONVERSATION CHAT WINDOW (8 COLS) */}
+          <div className="lg:col-span-8 flex flex-col justify-between p-4 sm:p-6 bg-white h-full overflow-hidden">
+            {activePartner ? (
+              <>
+                {/* Chat Header */}
+                <div className="pb-3 border-b border-stone-200 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-2xl bg-charcoal text-sand flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
+                      <Building2 className="w-4 h-4 text-amber-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-charcoal tracking-tight flex items-center gap-2">
+                        <span>{activePartner.partner_name}</span>
+                        <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-taupe/15 text-taupe">
+                          Supplier
+                        </span>
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5">
+                        <Mail className="w-3 h-3 text-stone-400" />
+                        <span className="font-medium">{activePartner.partner_email || 'Direct Channel'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Direct Channel</span>
                     </span>
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Message Input */}
-            <form onSubmit={handleSend} className="pt-4 border-t border-stone-100 flex items-center gap-3">
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Type your message to Château de Bellevue..."
-                className="flex-1 bg-[#FAF8F5] border border-stone-200/90 rounded-xl px-4 py-3 text-sm text-charcoal focus:outline-none focus:border-taupe"
-              />
-              <button
-                type="submit"
-                className="btn-primary p-3 rounded-xl flex items-center justify-center shadow-soft-sm"
-              >
-                <Send className="w-4 h-4 text-white" />
-              </button>
-            </form>
+                {/* Message Stream */}
+                <div
+                  ref={chatContainerRef}
+                  onScroll={handleContainerScroll}
+                  className="py-4 space-y-3 flex-1 overflow-y-auto px-2 min-h-0"
+                >
+                  {loadingMessages ? (
+                    <div className="py-16 text-center space-y-2">
+                      <Loader2 className="w-6 h-6 animate-spin text-taupe mx-auto" />
+                      <p className="text-xs text-stone-400">Loading messages...</p>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="py-12 text-center space-y-2 bg-stone-50/50 border border-stone-100 rounded-2xl p-6">
+                      <Sparkles className="w-6 h-6 text-taupe mx-auto" />
+                      <p className="text-xs font-bold text-charcoal">
+                        Direct consultation with {activePartner.partner_name}
+                      </p>
+                      <p className="text-[11px] text-stone-500 max-w-sm mx-auto">
+                        Send a message below to discuss dates, bespoke requirements, or package customization.
+                      </p>
+                    </div>
+                  ) : (
+                    messages.map((m) => {
+                      const isMe = m.sender_role === 'consumer' || m.sender_email.toLowerCase() === (user?.email || '').toLowerCase();
+
+                      return (
+                        <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                          <div
+                            className={`max-w-md p-3.5 rounded-2xl text-xs sm:text-sm space-y-1 shadow-soft-sm ${
+                              isMe
+                                ? 'bg-charcoal text-white rounded-br-none'
+                                : 'bg-stone-50 border border-stone-200 text-charcoal rounded-bl-none'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-4 pb-1 border-b border-white/10 text-[10px]">
+                              <span className={`font-bold ${isMe ? 'text-amber-200' : 'text-taupe'}`}>
+                                {isMe ? `You (${user?.name || 'Host'})` : `${m.sender_name} (Supplier)`}
+                              </span>
+                              <span className={isMe ? 'text-stone-300' : 'text-stone-400'}>
+                                {m.sender_email}
+                              </span>
+                            </div>
+
+                            <p className="leading-relaxed whitespace-pre-wrap pt-0.5">{m.content}</p>
+
+                            <div className="flex items-center justify-between text-[10px] pt-1">
+                              <span className={isMe ? 'text-stone-300' : 'text-stone-400'}>
+                                {formatMessageTime(m.created_at)}
+                              </span>
+                              {isMe && <CheckCheck className="w-3 h-3 text-emerald-300" />}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Message Input Box */}
+                <form onSubmit={handleSend} className="pt-3 border-t border-stone-100 flex items-center gap-3 shrink-0">
+                  <input
+                    type="text"
+                    required
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder={`Type your inquiry or message to ${activePartner.partner_name}...`}
+                    className="flex-1 bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-charcoal focus:outline-none focus:border-taupe shadow-inner"
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending || !inputText.trim()}
+                    className="px-5 py-2.5 rounded-xl bg-charcoal text-white text-xs sm:text-sm font-bold hover:bg-taupe transition-all shadow-soft-sm flex items-center gap-2 disabled:opacity-50 shrink-0"
+                  >
+                    {sending ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-sand" />
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 text-white" />
+                        <span>Send</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 p-8">
+                <div className="w-16 h-16 rounded-2xl bg-sand-100 text-taupe flex items-center justify-center shadow-soft-sm">
+                  <MessageSquare className="w-8 h-8 stroke-[1.5]" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-charcoal">Select a Consultation</h3>
+                  <p className="text-xs text-stone-500 max-w-sm">
+                    Choose an active booked conversation from the left to start chatting with your specialist.
+                  </p>
+                </div>
+                <Link
+                  href="/dashboard/host/browse"
+                  className="px-5 py-2.5 rounded-xl bg-charcoal text-white text-xs font-bold hover:bg-taupe transition-colors shadow-soft-sm"
+                >
+                  Browse Marketplace
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,114 +1,436 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import HostLayout from '@/components/dashboard/HostLayout';
-import { FileText, MessageSquare, Download, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import {
+  bookingsApi,
+  normalizeCategory,
+  decodeServiceDescription
+} from '@/lib/services/consumerApi';
+import { useAuth } from '@/context/AuthContext';
+import {
+  FileText,
+  MessageSquare,
+  CheckCircle2,
+  Clock,
+  Check,
+  XCircle,
+  CreditCard,
+  Sparkles,
+  ArrowRight,
+  RefreshCw,
+  Calendar,
+  MapPin,
+  Users,
+  ShieldCheck,
+  Building2,
+  Package,
+  AlertTriangle,
+  X,
+  Loader2
+} from 'lucide-react';
 
 export default function HostRequestsPage() {
-  const requests = [
-    {
-      id: 'req_1',
-      supplierName: 'Château de Bellevue',
-      category: 'Venue & Location',
-      dateSubmitted: 'Aug 28, 2026',
-      price: '$4,500',
-      status: 'Accepted',
-      statusBadge: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-      image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-      id: 'req_2',
-      supplierName: 'Maison Gourmet Catering',
-      category: 'Catering & Food',
-      dateSubmitted: 'Aug 29, 2026',
-      price: '$3,800',
-      status: 'Contract Sent',
-      statusBadge: 'bg-blue-100 text-blue-800 border-blue-300',
-      image: 'https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-      id: 'req_3',
-      supplierName: 'Aura Floral & Styling',
-      category: 'Floral & Decor',
-      dateSubmitted: 'Aug 30, 2026',
-      price: '$2,200',
-      status: 'Pending',
-      statusBadge: 'bg-amber-100 text-amber-800 border-amber-300',
-      image: 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-      id: 'req_4',
-      supplierName: 'Lumière Wedding Photography',
-      category: 'Photography',
-      dateSubmitted: 'Aug 28, 2026',
-      price: '$2,900',
-      status: 'Deposit Paid',
-      statusBadge: 'bg-purple-100 text-purple-800 border-purple-300',
-      image: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?q=80&w=800&auto=format&fit=crop',
-    },
-  ];
+  const { user, isLoading: authLoading } = useAuth();
+  const [filterStatus, setFilterStatus] = useState<string>('All');
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Cancel Modal State
+  const [cancelModalBooking, setCancelModalBooking] = useState<any | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>('');
+  const [cancelling, setCancelling] = useState<boolean>(false);
+
+  const loadRequests = async () => {
+    try {
+      setLoading(true);
+      const data = await bookingsApi.getMyBookings();
+      setRequests(data || []);
+    } catch (err) {
+      console.error('Failed to load host booking requests', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!authLoading) {
+      loadRequests();
+    }
+  }, [user?.id, user?.email, authLoading]);
+
+  const handleOpenCancelModal = (booking: any) => {
+    setCancelModalBooking(booking);
+    setCancelReason('Change in event plans or date.');
+  };
+
+  const handleConfirmCancel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancelModalBooking) return;
+
+    try {
+      setCancelling(true);
+      await bookingsApi.updateStatus(
+        cancelModalBooking.id,
+        'cancelled',
+        cancelReason ? `Cancelled by Host: ${cancelReason}` : 'Cancelled by Host'
+      );
+      setCancelModalBooking(null);
+      await loadRequests();
+    } catch (err: any) {
+      alert(`Failed to cancel booking: ${err?.message || 'Server error'}`);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const getNormalizedStatus = (st?: string) => {
+    const s = (st || 'pending').toLowerCase();
+    if (s === 'availability_confirmed' || s === 'accepted') return 'Accepted';
+    if (s === 'declined' || s === 'rejected') return 'Declined';
+    if (s === 'deposit_paid' || s === 'confirmed') return 'Deposit Paid';
+    if (s === 'contract_sent') return 'Contract Sent';
+    if (s === 'cancelled' || s === 'cancel') return 'Cancelled';
+    return 'Pending';
+  };
+
+  const getStatusBadge = (normalized: string) => {
+    switch (normalized) {
+      case 'Accepted':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+      case 'Contract Sent':
+        return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'Deposit Paid':
+        return 'bg-purple-100 text-purple-800 border-purple-300';
+      case 'Declined':
+        return 'bg-rose-100 text-rose-800 border-rose-300';
+      case 'Cancelled':
+        return 'bg-stone-100 text-stone-600 border-stone-300';
+      default:
+        return 'bg-amber-100 text-amber-800 border-amber-300';
+    }
+  };
+
+  const filtered = requests.filter((r) => {
+    if (filterStatus === 'All') return true;
+    const norm = getNormalizedStatus(r.status);
+    return norm.toLowerCase() === filterStatus.toLowerCase();
+  });
 
   return (
     <HostLayout>
-      <div className="space-y-8">
-        <div>
-          <span className="text-xs font-semibold text-taupe block">
-            Status Tracker
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
-            Requests & Booking Status
-          </h1>
-        </div>
-
-        <div className="space-y-4">
-          {requests.map((req) => (
-            <div
-              key={req.id}
-              className="bg-white border border-stone-200/90 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-soft-sm hover:border-taupe/40 hover:shadow-soft-md transition-all"
-            >
-              <div className="flex items-center gap-4 w-full sm:w-auto">
-                <div className="relative h-20 w-24 rounded-2xl overflow-hidden shrink-0">
-                  <Image src={req.image} alt={req.supplierName} fill className="object-cover" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs text-taupe font-semibold">
-                      {req.category}
-                    </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-sans font-bold border ${req.statusBadge}`}>
-                      {req.status}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-bold text-charcoal">
-                    {req.supplierName}
-                  </h3>
-                  <span className="text-xs text-charcoal/60 font-sans block mt-0.5">
-                    Submitted on {req.dateSubmitted} • Package: <strong className="text-taupe font-mono">{req.price}</strong>
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-taupe/10">
-                <Link
-                  href="/dashboard/host/messages"
-                  className="btn-secondary px-4 py-2 text-xs flex items-center gap-1.5"
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>Message</span>
-                </Link>
-                <Link
-                  href="/dashboard/host/documents"
-                  className="btn-primary px-4 py-2 text-xs flex items-center gap-1.5"
-                >
-                  <FileText className="w-3.5 h-3.5 text-sand" />
-                  <span>Contract</span>
-                </Link>
-              </div>
+      <div className="space-y-8 max-w-6xl mx-auto pb-16">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-200/80">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-taupe uppercase tracking-wider mb-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Host Inquiries & Booking Engine</span>
             </div>
-          ))}
+            <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
+              Booking Requests & Quotes
+            </h1>
+            <p className="text-xs sm:text-sm text-stone-500 mt-1">
+              Track your service inquiries, vendor response notes, lock in bookings via Escrow, or manage cancellations.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={loadRequests}
+              className="p-3 rounded-2xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors"
+              title="Refresh Inquiries"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            <div className="flex items-center gap-2 overflow-x-auto">
+              {['All', 'Pending', 'Accepted', 'Deposit Paid', 'Declined', 'Cancelled'].map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setFilterStatus(st)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                    filterStatus === st
+                      ? 'bg-charcoal text-white shadow-soft-sm'
+                      : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* Requests List */}
+        {loading ? (
+          <div className="py-20 text-center space-y-3">
+            <div className="w-8 h-8 border-2 border-taupe border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs text-stone-500 font-medium">Syncing your personal booking requests...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white border border-dashed border-stone-300 rounded-3xl p-12 text-center space-y-4 shadow-soft-sm">
+            <div className="w-14 h-14 rounded-2xl bg-sand-100 text-taupe flex items-center justify-center mx-auto">
+              <Package className="w-7 h-7 stroke-[1.5]" />
+            </div>
+            <h3 className="font-bold text-charcoal text-base">No booking requests found</h3>
+            <p className="text-xs text-stone-500 max-w-sm mx-auto">
+              {filterStatus !== 'All'
+                ? `No booking inquiries match the "${filterStatus}" filter.`
+                : 'You have not submitted any service inquiries under this account yet. Explore verified suppliers to book customized packages.'}
+            </p>
+            <Link
+              href="/dashboard/host/browse"
+              className="inline-flex items-center gap-2 btn-primary px-5 py-2.5 text-xs font-bold shadow-soft-sm hover:scale-[1.02] transition-transform"
+            >
+              <span>Browse Suppliers & Services</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {filtered.map((req) => {
+              const normStatus = getNormalizedStatus(req.status);
+              const badgeClass = getStatusBadge(normStatus);
+
+              // Extract Service details
+              const service = req.service;
+              const { text: cleanDesc, image_url: serviceImg } = decodeServiceDescription(service?.description);
+
+              const supplier = req.supplier || service?.supplier;
+              const supplierName = supplier?.business_name || supplier?.name || 'Verified Supplier Partner';
+              const supplierCategory = normalizeCategory(supplier?.category || supplier?.category_id || 'Event Specialist');
+              const supplierCity = supplier?.city || req.event?.city || 'Madrid';
+
+              const displayImage =
+                serviceImg ||
+                service?.image ||
+                supplier?.avatar_url ||
+                supplier?.image ||
+                'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop';
+
+              const priceNum = Number(req.quote_amount || service?.base_price || 1500);
+              const depositNum = Number(req.deposit_amount || (priceNum * 0.2));
+              const dateSubmitted = req.created_at
+                ? new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : 'Recent';
+
+              const canCancel = normStatus === 'Pending' || normStatus === 'Accepted';
+
+              return (
+                <div
+                  key={req.id}
+                  className="bg-white border border-stone-200/90 rounded-3xl p-6 transition-all duration-300 shadow-soft-sm hover:border-taupe/40 hover:shadow-soft-md space-y-5"
+                >
+                  {/* Top Bar with Service, Supplier & Status */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
+                    <div className="flex items-center gap-4">
+                      <div className="relative h-20 w-24 rounded-2xl overflow-hidden shrink-0 shadow-soft-sm bg-stone-100">
+                        <Image src={displayImage} alt={service?.name || supplierName} fill className="object-cover" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs text-taupe font-semibold">{supplierCategory}</span>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-sans font-bold border ${badgeClass}`}>
+                            {normStatus}
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-bold text-charcoal">
+                          {service?.name || 'Custom Package Inquiry'}
+                        </h3>
+                        <span className="text-xs text-charcoal/70 font-sans flex items-center gap-1.5 mt-0.5">
+                          <Building2 className="w-3.5 h-3.5 text-taupe" />
+                          <span>Supplier: <strong>{supplierName}</strong> ({supplierCity})</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-left sm:text-right">
+                      <div className="text-[10px] text-stone-400 uppercase font-bold">Total Package Rate</div>
+                      <div className="text-xl font-bold text-charcoal font-mono">€{priceNum.toLocaleString()}</div>
+                      <span className="text-[11px] text-emerald-700 font-semibold block">
+                        20% Escrow Deposit: €{depositNum.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Booking Details Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-stone-50 border border-stone-200/60">
+                    <div>
+                      <span className="text-[10px] text-stone-400 uppercase font-bold block">Target Event Date</span>
+                      <span className="text-xs font-semibold text-charcoal flex items-center gap-1.5 mt-0.5 font-mono">
+                        <Calendar className="w-3.5 h-3.5 text-taupe shrink-0" />
+                        {req.requested_date || req.event?.event_date || 'Date TBD'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-stone-400 uppercase font-bold block">Celebration Event</span>
+                      <span className="text-xs font-semibold text-charcoal flex items-center gap-1.5 mt-0.5 truncate">
+                        <Sparkles className="w-3.5 h-3.5 text-taupe shrink-0" />
+                        {req.event?.title || 'Private Celebration'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-stone-400 uppercase font-bold block">Guest Count</span>
+                      <span className="text-xs font-semibold text-charcoal flex items-center gap-1.5 mt-0.5">
+                        <Users className="w-3.5 h-3.5 text-taupe shrink-0" />
+                        {req.guest_count || 50} guests
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-stone-400 uppercase font-bold block">Submitted Date</span>
+                      <span className="text-xs font-semibold text-stone-600 flex items-center gap-1 mt-0.5">
+                        <Clock className="w-3.5 h-3.5 text-taupe shrink-0" />
+                        {dateSubmitted}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Requirements & Supplier Response */}
+                  <div className="space-y-2.5">
+                    {req.requirements && (
+                      <div className="p-3.5 rounded-2xl bg-sand-50/80 border border-stone-200 text-xs text-stone-700 leading-relaxed">
+                        <strong className="text-charcoal block mb-0.5">Your Requirements & Preferences:</strong>
+                        {req.requirements}
+                      </div>
+                    )}
+
+                    {req.supplier_response_notes && (
+                      <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-950 leading-relaxed">
+                        <strong className="text-emerald-900 flex items-center gap-1.5 mb-0.5 font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Supplier Response & Notes:</span>
+                        </strong>
+                        {req.supplier_response_notes}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Bar */}
+                  <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-stone-100 justify-between">
+                    <span className="text-[11px] text-stone-500 font-medium">
+                      Inquiry ID: <span className="font-mono">{req.id?.slice(0, 8)}</span> • Protected by LEEMEVENT Escrow
+                    </span>
+
+                    <div className="flex items-center gap-2.5">
+                      {canCancel && (
+                        <button
+                          onClick={() => handleOpenCancelModal(req)}
+                          className="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>Cancel Booking</span>
+                        </button>
+                      )}
+
+                      {normStatus === 'Accepted' && (
+                        <Link
+                          href="/dashboard/host/cart"
+                          className="px-5 py-2.5 rounded-xl bg-charcoal hover:bg-taupe text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-soft-sm"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 text-sand" />
+                          <span>Pay 20% Deposit (Escrow)</span>
+                        </Link>
+                      )}
+
+                      {normStatus === 'Contract Sent' && (
+                        <Link
+                          href="/dashboard/host/documents"
+                          className="btn-primary px-4 py-2 text-xs flex items-center gap-1.5 shadow-soft-sm"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-sand" />
+                          <span>Review & Sign Contract</span>
+                        </Link>
+                      )}
+
+                      <Link
+                        href={`/dashboard/host/messages?supplierId=${req.supplier_id || req.supplier?.id || req.service?.supplier_id || ''}&supplierEmail=${encodeURIComponent(req.supplier?.profile?.email || req.supplier?.email || req.service?.supplier?.profile?.email || req.service?.supplier?.email || req.supplier_email || '')}&supplierName=${encodeURIComponent(req.supplier?.business_name || req.supplier?.profile?.full_name || req.service?.supplier?.business_name || req.service?.supplier?.profile?.full_name || req.supplier?.name || 'Specialist Partner')}`}
+                        className="btn-secondary px-4 py-2 text-xs flex items-center gap-1.5 hover:bg-stone-100 transition-colors"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Message Supplier</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* CANCEL BOOKING MODAL */}
+        {cancelModalBooking && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl max-w-md w-full border border-stone-200 shadow-2xl overflow-hidden">
+              <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <h3 className="font-bold text-charcoal text-base">Cancel Booking Request</h3>
+                </div>
+                <button
+                  onClick={() => setCancelModalBooking(null)}
+                  className="p-1 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-200/60"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleConfirmCancel} className="p-6 space-y-4">
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  Are you sure you want to cancel your booking inquiry for{' '}
+                  <strong className="text-charcoal">{cancelModalBooking.service?.name || 'this service package'}</strong>? 
+                  The supplier will be notified that you withdrew the request.
+                </p>
+
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    Cancellation Reason (Optional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    placeholder="Provide a brief reason (e.g., date changed, budget adjusted)..."
+                    className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-400"
+                  />
+                </div>
+
+                <div className="pt-3 flex items-center justify-end gap-3 border-t border-stone-100">
+                  <button
+                    type="button"
+                    onClick={() => setCancelModalBooking(null)}
+                    className="px-4 py-2 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50"
+                  >
+                    Keep Booking
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={cancelling}
+                    className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-soft-sm"
+                  >
+                    {cancelling ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Cancelling...</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>Yes, Cancel Booking</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </HostLayout>
   );

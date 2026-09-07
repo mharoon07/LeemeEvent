@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -13,7 +14,6 @@ import {
   ShoppingBag,
   FileText,
   MessageSquare,
-  Users,
   FileCode,
   Settings,
   LogOut,
@@ -22,10 +22,25 @@ import {
   Compass,
   Bell,
   ChevronRight,
+  Check,
+  Clock,
+  Sparkles,
+  ShieldCheck,
+  Trash2,
 } from 'lucide-react';
 
 interface HostLayoutProps {
   children: React.ReactNode;
+}
+
+interface NotificationItem {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  read: boolean;
+  type: 'quote' | 'contract' | 'escrow' | 'system';
+  link: string;
 }
 
 export default function HostLayout({ children }: HostLayoutProps) {
@@ -34,16 +49,85 @@ export default function HostLayout({ children }: HostLayoutProps) {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
 
+  // Real interactive notifications
+  const [notifications, setNotifications] = useState<NotificationItem[]>([
+    {
+      id: 'n1',
+      title: 'Quote Accepted by Venue',
+      desc: 'Château de Bellevue Estate accepted your celebration booking proposal.',
+      time: '10m ago',
+      read: false,
+      type: 'quote',
+      link: '/dashboard/host/requests',
+    },
+    {
+      id: 'n2',
+      title: 'Digital Contract Ready',
+      desc: 'Maison Gourmet Haute Catering submitted contract for electronic signature.',
+      time: '1h ago',
+      read: false,
+      type: 'contract',
+      link: '/dashboard/host/documents',
+    },
+    {
+      id: 'n3',
+      title: 'Escrow Deposit Held',
+      desc: '25% Advance Escrow payment of €1.125 securely registered.',
+      time: 'Yesterday',
+      read: true,
+      type: 'escrow',
+      link: '/dashboard/host/cart',
+    },
+    {
+      id: 'n4',
+      title: 'Welcome to LEEMEVENTS',
+      desc: 'Your private host portal is live with 2026 automated planning engine.',
+      time: '2 days ago',
+      read: true,
+      type: 'system',
+      link: '/dashboard/host',
+    },
+  ]);
+
+  // Close notifications on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const markOneRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+  };
+
+  // Nav items (Cleaned: Team & Planning removed as requested)
   const navItems = [
     { name: t.dashboard.hostNav.overview, href: '/dashboard/host', icon: LayoutDashboard },
     { name: t.dashboard.hostNav.myEvents, href: '/dashboard/host/events', icon: CalendarDays },
     { name: t.dashboard.hostNav.browse, href: '/dashboard/host/browse', icon: Search },
-    { name: t.dashboard.hostNav.cart, href: '/dashboard/host/cart', icon: ShoppingBag, badge: '3' },
     { name: t.dashboard.hostNav.requests, href: '/dashboard/host/requests', icon: FileText, badge: 'Active' },
-    { name: t.dashboard.hostNav.messages, href: '/dashboard/host/messages', icon: MessageSquare, badge: '2' },
-    { name: t.dashboard.hostNav.team, href: '/dashboard/host/team', icon: Users, isPhase2: true },
     { name: t.dashboard.hostNav.documents, href: '/dashboard/host/documents', icon: FileCode },
+    { name: t.dashboard.hostNav.cart, href: '/dashboard/host/cart', icon: ShoppingBag, badge: '3' },
+    { name: t.dashboard.hostNav.messages, href: '/dashboard/host/messages', icon: MessageSquare, badge: '2' },
     { name: t.dashboard.hostNav.settings, href: '/dashboard/host/settings', icon: Settings },
   ];
 
@@ -55,6 +139,10 @@ export default function HostLayout({ children }: HostLayoutProps) {
     logout();
     router.push('/login');
   };
+
+  const displayName = user?.name || 'Valued Host';
+  const displayEmail = user?.email || 'host@leemevents.com';
+  const displayInitial = displayName.charAt(0).toUpperCase();
 
   return (
     <div className="min-h-screen bg-[#F8F7F4] text-charcoal flex font-sans selection:bg-taupe selection:text-sand">
@@ -116,12 +204,6 @@ export default function HostLayout({ children }: HostLayoutProps) {
                       {item.badge}
                     </span>
                   )}
-
-                  {item.isPhase2 && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-sans tracking-normal shrink-0 ml-1.5 font-semibold">
-                      Phase 2
-                    </span>
-                  )}
                 </Link>
               );
             })}
@@ -130,19 +212,34 @@ export default function HostLayout({ children }: HostLayoutProps) {
 
         {/* User Profile & Sign Out Footer */}
         <div className="pt-3 border-t border-stone-200/80 space-y-2.5">
-          <div className="flex items-center gap-3 px-1">
-            <div className="w-9 h-9 rounded-full bg-taupe text-white text-xs font-bold flex items-center justify-center shrink-0 shadow-soft-sm ring-2 ring-taupe/20">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'E'}
-            </div>
+          <Link
+            href="/dashboard/host/settings"
+            className="flex items-center gap-3 px-2 py-1.5 rounded-xl hover:bg-stone-50 transition-colors group"
+          >
+            {user?.avatar ? (
+              <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 shadow-soft-sm ring-2 ring-taupe/30">
+                <Image
+                  src={user.avatar}
+                  alt={displayName}
+                  fill
+                  className="object-cover"
+                  unoptimized={Boolean(user.avatar?.startsWith('data:') || user.avatar?.startsWith('http'))}
+                />
+              </div>
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-taupe text-white text-xs font-bold flex items-center justify-center shrink-0 shadow-soft-sm ring-2 ring-taupe/20">
+                {displayInitial}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
-              <span className="text-xs font-semibold text-charcoal block truncate">
-                {user?.name || 'Eleanor Vance'}
+              <span className="text-xs font-semibold text-charcoal block truncate group-hover:text-taupe transition-colors">
+                {displayName}
               </span>
               <span className="text-[11px] text-stone-500 block truncate">
-                {user?.email || 'eleanor@example.com'}
+                {displayEmail}
               </span>
             </div>
-          </div>
+          </Link>
 
           <button
             onClick={handleLogout}
@@ -281,28 +378,133 @@ export default function HostLayout({ children }: HostLayoutProps) {
               </span>
             </Link>
 
-            <Link
-              href="/dashboard/host/messages"
-              className="relative p-2 rounded-xl border border-stone-200/80 bg-white hover:bg-[#FAF8F5] text-stone-700 hover:text-charcoal transition-all shadow-soft-sm"
-              title="Messages & Updates"
-            >
-              <Bell className="w-4 h-4 text-stone-500" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-white" />
-            </Link>
+            {/* REAL INTERACTIVE NOTIFICATIONS POPOVER */}
+            <div className="relative" ref={notifRef}>
+              <button
+                type="button"
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className={`relative p-2 rounded-xl border transition-all shadow-soft-sm ${
+                  notificationsOpen
+                    ? 'bg-charcoal text-white border-charcoal'
+                    : 'bg-white hover:bg-[#FAF8F5] border-stone-200/80 text-stone-700 hover:text-charcoal'
+                }`}
+                title="Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
 
-            <div className="hidden sm:flex items-center gap-2.5 pl-2 border-l border-stone-200">
-              <div className="w-8 h-8 rounded-full bg-taupe text-white text-xs font-bold flex items-center justify-center shadow-soft-sm ring-1 ring-taupe/20">
-                {user?.name ? user.name.charAt(0).toUpperCase() : 'E'}
-              </div>
+              {notificationsOpen && (
+                <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-stone-200/90 z-50 p-4 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-taupe" />
+                      <h4 className="text-sm font-bold text-charcoal">Notifications</h4>
+                      {unreadCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[10px] font-bold">
+                          {unreadCount} new
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs">
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={markAllRead}
+                          className="text-[11px] font-semibold text-taupe hover:underline"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                      {notifications.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={clearAllNotifications}
+                          className="text-[11px] text-stone-400 hover:text-rose-600"
+                          title="Clear all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-stone-100 max-h-80 overflow-y-auto mt-2">
+                    {notifications.length > 0 ? (
+                      notifications.map((notif) => (
+                        <Link
+                          key={notif.id}
+                          href={notif.link}
+                          onClick={() => {
+                            markOneRead(notif.id);
+                            setNotificationsOpen(false);
+                          }}
+                          className={`block p-3 rounded-2xl transition-colors ${
+                            notif.read
+                              ? 'hover:bg-stone-50 opacity-80'
+                              : 'bg-sand-50/80 hover:bg-sand-100/70'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <h5 className="text-xs font-bold text-charcoal flex items-center gap-1.5">
+                              {!notif.read && (
+                                <span className="w-2 h-2 rounded-full bg-taupe shrink-0" />
+                              )}
+                              <span>{notif.title}</span>
+                            </h5>
+                            <span className="text-[10px] text-stone-400 shrink-0">
+                              {notif.time}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-stone-600 mt-0.5 leading-snug">
+                            {notif.desc}
+                          </p>
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="py-8 text-center text-xs text-stone-400">
+                        No new notifications
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* User Profile Quick Chip */}
+            <Link
+              href="/dashboard/host/settings"
+              className="hidden sm:flex items-center gap-2.5 pl-2 border-l border-stone-200 hover:opacity-85 transition-opacity"
+            >
+              {user?.avatar ? (
+                <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-soft-sm ring-1 ring-taupe/30 shrink-0">
+                  <Image
+                    src={user.avatar}
+                    alt={displayName}
+                    fill
+                    className="object-cover"
+                    unoptimized={Boolean(user.avatar?.startsWith('data:') || user.avatar?.startsWith('http'))}
+                  />
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-taupe text-white text-xs font-bold flex items-center justify-center shadow-soft-sm ring-1 ring-taupe/20 shrink-0">
+                  {displayInitial}
+                </div>
+              )}
               <div className="hidden md:block text-left">
                 <span className="text-xs font-bold text-charcoal block leading-tight truncate max-w-[120px]">
-                  {user?.name || 'Eleanor Vance'}
+                  {displayName}
                 </span>
                 <span className="text-[10px] text-emerald-700 font-semibold block leading-tight">
                   {t.dashboard.eventHost}
                 </span>
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 
