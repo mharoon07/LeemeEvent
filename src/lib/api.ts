@@ -44,7 +44,7 @@ export async function request<T = any>(
       const storedUser = localStorage.getItem('LEEMEVENTS_user_session');
       if (storedUser) {
         const parsed = JSON.parse(storedUser);
-        sessionUserId = (parsed.id && parsed.id !== 'usr_1' && !parsed.id.startsWith('usr_')) ? parsed.id : null;
+        sessionUserId = parsed.id || null;
         sessionUserEmail = parsed.email || null;
       }
     } catch {}

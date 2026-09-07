@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const u = res.data?.user || (res as any)?.user;
             if (u) {
               const mappedUser: UserProfile = {
-                id: u.id || existingLocal.id || 'usr_1',
+                id: u.id || u.auth_user_id || existingLocal.id || '',
                 name: existingLocal.name || u.full_name || u.name || 'Valued Member',
                 email: existingLocal.email || u.email || '',
                 role: normalizeRole(u.role || existingLocal.role),
@@ -190,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userRole = normalizeRole(res.data?.role || backendUser?.role || res.role || role);
 
       const profile: UserProfile = {
-        id: backendUser?.id || 'usr_1',
+        id: backendUser?.id || backendUser?.auth_user_id || '',
         name: backendUser?.full_name || backendUser?.name || displayName || email.split('@')[0],
         email: backendUser?.email || email,
         role: userRole,
@@ -278,7 +278,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userRole = normalizeRole(res.data?.role || backendUser?.role || res.role || role);
 
       const profile: UserProfile = {
-        id: backendUser?.id || 'usr_1',
+        id: backendUser?.id || backendUser?.auth_user_id || '',
         name: backendUser?.full_name || backendUser?.name || name,
         email: backendUser?.email || email,
         role: userRole,
