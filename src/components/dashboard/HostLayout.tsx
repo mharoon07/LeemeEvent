@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react';
+import SuspendedAccountModal from '@/components/dashboard/SuspendedAccountModal';
 
 interface HostLayoutProps {
   children: React.ReactNode;
@@ -46,7 +47,7 @@ interface NotificationItem {
 export default function HostLayout({ children }: HostLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, isSuspended, suspensionReason } = useAuth();
   const { t } = useLanguage();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -512,6 +513,13 @@ export default function HostLayout({ children }: HostLayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* Real-time Account Suspension Modal Lock */}
+      <SuspendedAccountModal
+        isOpen={isSuspended || Boolean(user?.isSuspended) || user?.is_active === false}
+        role="host"
+        reason={suspensionReason || user?.suspensionReason}
+      />
     </div>
   );
 }

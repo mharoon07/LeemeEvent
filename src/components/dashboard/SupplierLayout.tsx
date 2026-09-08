@@ -23,7 +23,9 @@ import {
   Compass,
   Menu,
   X,
+  RefreshCw,
 } from 'lucide-react';
+import SuspendedAccountModal from '@/components/dashboard/SuspendedAccountModal';
 
 interface SupplierLayoutProps {
   children: React.ReactNode;
@@ -32,11 +34,33 @@ interface SupplierLayoutProps {
 export default function SupplierLayout({ children }: SupplierLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, approveSupplier } = useAuth();
+  const { user, logout, isSuspended, suspensionReason, checkSuspension } = useAuth();
   const { t } = useLanguage();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const isApproved = user?.supplierApproved ?? true;
+  const isApproved = user?.verification_status === 'verified';
+  const isRejected = user?.verification_status === 'rejected';
+  const isSuspendedUser = isSuspended || user?.is_active === false || user?.isSuspended || user?.verification_status === 'suspended';
+  const isPending = !isApproved && !isRejected && !isSuspendedUser;
+
+  const modalMode = isSuspendedUser ? 'suspended' : isRejected ? 'rejected' : isPending ? 'pending' : undefined;
+  const isModalOpen = Boolean(!isApproved || isSuspendedUser || isRejected || isPending);
+
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+
+  const handleCheckStatus = async () => {
+    setIsCheckingStatus(true);
+    try {
+      if (checkSuspension) {
+        const latest: any = await checkSuspension();
+        if (latest?.verification_status === 'verified' || latest?.supplierApproved === true) {
+          window.location.reload();
+          return;
+        }
+      }
+    } catch {}
+    setTimeout(() => setIsCheckingStatus(false), 500);
+  };
 
   const navItems = [
     { name: t.dashboard.supplierNav.overview, href: '/dashboard/supplier', icon: LayoutDashboard },
@@ -44,9 +68,9 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
     { name: t.dashboard.supplierNav.portfolio, href: '/dashboard/supplier/portfolio', icon: ImageIcon },
     { name: t.dashboard.supplierNav.services, href: '/dashboard/supplier/services', icon: DollarSign },
     { name: t.dashboard.supplierNav.calendar, href: '/dashboard/supplier/calendar', icon: Calendar, badge: 'Sync' },
-    { name: t.dashboard.supplierNav.requests, href: '/dashboard/supplier/requests', icon: Inbox, badge: '3 New' },
+    { name: t.dashboard.supplierNav.requests, href: '/dashboard/supplier/requests', icon: Inbox, badge: isApproved ? '3 New' : 'Locked' },
     { name: t.dashboard.supplierNav.customers, href: '/dashboard/supplier/customers', icon: Users },
-    { name: t.dashboard.supplierNav.messages, href: '/dashboard/supplier/messages', icon: MessageSquare, badge: '1' },
+    { name: t.dashboard.supplierNav.messages, href: '/dashboard/supplier/messages', icon: MessageSquare, badge: isApproved ? '1' : undefined },
     { name: t.dashboard.supplierNav.reviews, href: '/dashboard/supplier/reviews', icon: Star, isPhase2: true },
     { name: t.dashboard.supplierNav.earnings, href: '/dashboard/supplier/earnings', icon: TrendingUp },
   ];
@@ -60,7 +84,7 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
     <div className="min-h-screen bg-[#F8F7F4] text-charcoal flex flex-col lg:flex-row font-sans selection:bg-taupe selection:text-sand">
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden lg:flex w-64 shrink-0 bg-white border-r border-stone-200/90 flex-col justify-between p-5 fixed top-0 bottom-0 left-0 z-40 shadow-[1px_0_12px_rgba(0,0,0,0.03)]">
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Brand Header */}
           <Link href="/dashboard/supplier" className="group block">
             <div className="flex items-center gap-2.5">
@@ -78,17 +102,41 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
             </div>
           </Link>
 
-          {/* Verification Badge Header */}
-          <div className="bg-[#FAF8F5] border border-stone-200/90 rounded-2xl p-3 shadow-soft-sm">
+          {/* Verification Badge Header (Real Status) */}
+          <div
+            className={`border rounded-2xl p-3 shadow-soft-sm transition-all ${
+              isApproved
+                ? 'bg-emerald-50/50 border-emerald-200/80'
+                : isRejected
+                ? 'bg-rose-50/50 border-rose-200/80'
+                : 'bg-amber-50/50 border-amber-200/80'
+            }`}
+          >
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0 pr-1">
-                <ShieldCheck className={`w-4 h-4 shrink-0 ${isApproved ? 'text-emerald-700' : 'text-amber-600'}`} />
+                <ShieldCheck
+                  className={`w-4 h-4 shrink-0 ${
+                    isApproved
+                      ? 'text-emerald-700'
+                      : isRejected
+                      ? 'text-rose-600'
+                      : 'text-amber-600 animate-pulse'
+                  }`}
+                />
                 <div className="min-w-0">
                   <span className="text-xs font-bold text-charcoal block truncate">
-                    {isApproved ? t.dashboard.verifiedSupplier : t.dashboard.pendingApproval}
+                    {isApproved
+                      ? 'Verified Partner'
+                      : isRejected
+                      ? 'Application Declined'
+                      : 'Pending Review'}
                   </span>
                   <span className="text-[10px] text-stone-500 block truncate">
-                    {isApproved ? t.dashboard.activeInDirectory : t.dashboard.reviewInProgress}
+                    {isApproved
+                      ? 'Active in Directory'
+                      : isRejected
+                      ? 'Contact Support'
+                      : 'Est. 24–48h window'}
                   </span>
                 </div>
               </div>
@@ -96,11 +144,12 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
               {!isApproved && (
                 <button
                   type="button"
-                  onClick={approveSupplier}
-                  className="text-[10px] uppercase bg-emerald-700 text-white px-2 py-0.5 rounded-lg font-bold hover:bg-emerald-800 shrink-0 shadow-sm"
-                  title="Demo: Click to simulate instant admin approval"
+                  onClick={handleCheckStatus}
+                  className="text-[10px] text-stone-600 hover:text-charcoal bg-white border border-stone-200 px-2 py-1 rounded-lg font-bold hover:bg-stone-50 shrink-0 shadow-sm flex items-center gap-1 transition-all"
+                  title="Check if Admin has approved your application"
                 >
-                  Approve
+                  <RefreshCw className={`w-2.5 h-2.5 ${isCheckingStatus ? 'animate-spin text-taupe' : ''}`} />
+                  <span>Sync</span>
                 </button>
               )}
             </div>
@@ -256,10 +305,22 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
           <div className="flex items-center gap-2.5 sm:gap-3">
             <LanguageSwitcher variant="navbar" />
 
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{t.dashboard.liveInDirectory}</span>
-            </div>
+            {isApproved ? (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-soft-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Live in Directory</span>
+              </div>
+            ) : isRejected ? (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold shadow-soft-sm">
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                <span>Application Declined</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold shadow-soft-sm">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                <span>In Review (Est. 24-48h)</span>
+              </div>
+            )}
 
             <div className="hidden sm:flex items-center gap-2.5 pl-2 border-l border-stone-200">
               <div className="w-8 h-8 rounded-full bg-charcoal text-white text-xs font-bold flex items-center justify-center shadow-soft-sm">
@@ -281,6 +342,14 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* Real-time Supplier Studio Verification & Suspension Gate Lock */}
+      <SuspendedAccountModal
+        isOpen={isModalOpen}
+        mode={modalMode}
+        role="supplier"
+        reason={suspensionReason || user?.suspensionReason}
+      />
     </div>
   );
 }

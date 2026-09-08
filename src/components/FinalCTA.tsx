@@ -32,9 +32,9 @@ export default function FinalCTA({ onStartClick }: FinalCTAProps) {
             <span>{t.finalCTA.badge}</span>
           </span>
 
-          <h2 className="font-serif-display text-4xl sm:text-6xl font-bold text-charcoal tracking-tight text-balance leading-[1.15]">
+          <h2 className="text-4xl sm:text-6xl font-extrabold text-charcoal tracking-tight text-balance leading-[1.15]">
             {t.finalCTA.titlePart1} <br className="hidden sm:inline" />
-            <span className="italic font-normal text-taupe">{t.finalCTA.titlePart2}</span>
+            <span className="text-taupe">{t.finalCTA.titlePart2}</span>
           </h2>
 
           <p className="text-base sm:text-xl text-charcoal/80 max-w-2xl mx-auto leading-relaxed text-balance">

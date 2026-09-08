@@ -101,9 +101,80 @@ export default function SupplierDashboardHome() {
 
   const categoryName = normalizeCategory(profile?.category || 'Event Specialist');
 
+  const isApproved = user?.verification_status === 'verified' || user?.supplierApproved === true || profile?.verification_status === 'verified';
+  const isRejected = user?.verification_status === 'rejected' || profile?.verification_status === 'rejected';
+  const isPending = !isApproved && !isRejected;
+
   return (
     <SupplierLayout>
       <div className="space-y-8 max-w-7xl mx-auto pb-16">
+        {/* Verification Status Banner */}
+        {isPending ? (
+          <div className="bg-amber-50 border border-amber-200/90 rounded-3xl p-6 sm:p-7 shadow-soft-sm relative overflow-hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                  <Clock className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-200/70 text-amber-900 text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                    <span>Admin Review in Progress • Est. 24–48 Hours</span>
+                  </div>
+                  <h2 className="text-base sm:text-lg font-bold text-charcoal">
+                    Studio Application Under Review
+                  </h2>
+                  <p className="text-xs text-stone-600 mt-1 max-w-2xl leading-relaxed">
+                    Your profile and portfolio are being vetted by the LeemeEvent Concierge & Trust team. While pending, you can configure your services, portfolio, and calendar in <strong>Preview Mode</strong>. Client inquiries will unlock as soon as Admin approves your listing in the Admin Panel.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
+                <Link
+                  href="/dashboard/supplier/services"
+                  className="px-4 py-2 rounded-xl bg-charcoal text-white hover:bg-taupe text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-sand" />
+                  <span>Setup Services</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Vetting Checklist Steps */}
+            <div className="mt-5 pt-4 border-t border-amber-200/60 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="flex items-center gap-2 text-emerald-800 font-semibold bg-white/70 p-2.5 rounded-xl border border-emerald-200/60">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>1. Account & Profile Created</span>
+              </div>
+              <div className="flex items-center gap-2 text-amber-900 font-bold bg-amber-100/70 p-2.5 rounded-xl border border-amber-300/80">
+                <Clock className="w-4 h-4 text-amber-700 animate-spin shrink-0" />
+                <span>2. Admin Reviewing (In Progress)</span>
+              </div>
+              <div className="flex items-center gap-2 text-stone-400 bg-stone-100/50 p-2.5 rounded-xl border border-stone-200/60">
+                <ShieldCheck className="w-4 h-4 text-stone-300 shrink-0" />
+                <span>3. Live Directory Activation</span>
+              </div>
+            </div>
+          </div>
+        ) : isRejected ? (
+          <div className="bg-rose-50 border border-rose-200 rounded-3xl p-6 sm:p-7 shadow-soft-sm flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
+              <XCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-200/80 text-rose-900 text-[10px] font-bold uppercase tracking-wider mb-1">
+                Application Declined
+              </span>
+              <h2 className="text-base sm:text-lg font-bold text-charcoal">
+                Studio Verification Not Approved
+              </h2>
+              <p className="text-xs text-stone-600 mt-1">
+                Your application was not approved by the admin team. Please reach out to <a href="mailto:support@leemevent.com" className="text-rose-700 underline font-semibold">support@leemevent.com</a> to appeal or submit missing business documentation.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         {/* Page Header */}
         <div className="bg-white border border-stone-200/90 rounded-3xl p-6 sm:p-8 shadow-soft-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
@@ -111,9 +182,17 @@ export default function SupplierDashboardHome() {
               <span className="text-xs font-semibold text-taupe block uppercase tracking-wider">
                 Supplier Hub • Live Sync
               </span>
-              <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span
+                className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                  isApproved
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : isRejected
+                    ? 'bg-rose-100 text-rose-800'
+                    : 'bg-amber-100 text-amber-800'
+                }`}
+              >
                 <ShieldCheck className="w-3 h-3" />
-                <span>Verified Specialist</span>
+                <span>{isApproved ? 'Verified Specialist' : isRejected ? 'Declined' : 'Pending Review'}</span>
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-charcoal mt-1 tracking-tight">
@@ -298,7 +377,7 @@ export default function SupplierDashboardHome() {
 
                       <div className="text-xs text-stone-700 bg-stone-50 p-2.5 rounded-xl border border-stone-200/70">
                         <strong>Requested Service:</strong> {serviceName}
-                        {r.requirements && <p className="mt-0.5 text-stone-500 italic">&quot;{r.requirements}&quot;</p>}
+                        {r.requirements && <p className="mt-0.5 text-stone-600 font-medium">&quot;{r.requirements}&quot;</p>}
                       </div>
                     </div>
 

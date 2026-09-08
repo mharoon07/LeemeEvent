@@ -62,12 +62,12 @@ export default function HowItWorks({ onStartClick }: HowItWorksProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-20">
-          <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block mb-3 font-semibold">
+          <span className="text-xs tracking-wider uppercase text-taupe block mb-3 font-bold">
             {t.howItWorks.tag}
           </span>
-          <h2 className="font-classico text-3xl sm:text-5xl uppercase font-normal text-charcoal tracking-wide text-balance">
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-charcoal tracking-tight text-balance">
             {t.howItWorks.titlePart1}{' '}
-            <span className="font-serif-display lowercase italic font-normal text-taupe">
+            <span className="text-taupe">
               {t.howItWorks.titlePart2}
             </span>
           </h2>

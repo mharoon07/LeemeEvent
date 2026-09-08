@@ -141,12 +141,12 @@ export default function Categories({ onCategorySelect }: CategoriesProps) {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-2xl">
-            <span className="text-xs font-classico tracking-[0.25em] uppercase text-taupe block mb-3 font-semibold">
+            <span className="text-xs tracking-wider uppercase text-taupe block mb-3 font-bold">
               {t.categories.tag}
             </span>
-            <h2 className="font-classico text-3xl sm:text-5xl uppercase font-normal text-charcoal tracking-wide">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-charcoal tracking-tight">
               {t.categories.titlePart1}{' '}
-              <span className="font-serif-display lowercase italic font-normal text-taupe">
+              <span className="text-taupe">
                 {t.categories.titlePart2}
               </span>
             </h2>

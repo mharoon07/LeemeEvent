@@ -34,10 +34,10 @@ export default function CategoriesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="font-classico text-4xl sm:text-6xl font-normal uppercase tracking-wide text-charcoal leading-tight"
+            className="text-4xl sm:text-6xl font-extrabold tracking-tight text-charcoal leading-tight"
           >
             {t.categories.titlePart1}{' '}
-            <span className="font-serif-display lowercase italic font-normal text-taupe">
+            <span className="text-taupe">
               {t.categories.titlePart2}
             </span>
           </motion.h1>

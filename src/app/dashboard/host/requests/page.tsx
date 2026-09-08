@@ -364,8 +364,13 @@ export default function HostRequestsPage() {
 
         {/* CANCEL BOOKING MODAL */}
         {cancelModalBooking && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl max-w-md w-full border border-stone-200 shadow-2xl overflow-hidden">
+          <div
+            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setCancelModalBooking(null);
+            }}
+          >
+            <div className="bg-white rounded-3xl max-w-md w-full border border-stone-200 shadow-2xl overflow-hidden my-auto">
               <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center">
@@ -374,6 +379,7 @@ export default function HostRequestsPage() {
                   <h3 className="font-bold text-charcoal text-base">Cancel Booking Request</h3>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setCancelModalBooking(null)}
                   className="p-1 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-200/60"
                 >

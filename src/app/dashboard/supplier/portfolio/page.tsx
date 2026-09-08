@@ -676,11 +676,16 @@ export default function SupplierPortfolioPage() {
 
         {/* MILESTONE MODAL */}
         {isMilestoneModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-stone-200 shadow-2xl">
+          <div
+            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsMilestoneModalOpen(false);
+            }}
+          >
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-stone-200 shadow-2xl my-auto animate-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                 <h3 className="font-bold text-charcoal text-base">Add Career Milestone</h3>
-                <button onClick={() => setIsMilestoneModalOpen(false)} className="text-stone-400 hover:text-charcoal">
+                <button type="button" onClick={() => setIsMilestoneModalOpen(false)} className="text-stone-400 hover:text-charcoal">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -758,11 +763,16 @@ export default function SupplierPortfolioPage() {
 
         {/* CERT MODAL */}
         {isCertModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-stone-200 shadow-2xl">
+          <div
+            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsCertModalOpen(false);
+            }}
+          >
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-stone-200 shadow-2xl my-auto animate-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                 <h3 className="font-bold text-charcoal text-base">Add Certification / License</h3>
-                <button onClick={() => setIsCertModalOpen(false)} className="text-stone-400 hover:text-charcoal">
+                <button type="button" onClick={() => setIsCertModalOpen(false)} className="text-stone-400 hover:text-charcoal">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -818,11 +828,16 @@ export default function SupplierPortfolioPage() {
 
         {/* AWARD MODAL */}
         {isAwardModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-stone-200 shadow-2xl">
+          <div
+            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsAwardModalOpen(false);
+            }}
+          >
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-stone-200 shadow-2xl my-auto animate-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                 <h3 className="font-bold text-charcoal text-base">Add Award or Feature</h3>
-                <button onClick={() => setIsAwardModalOpen(false)} className="text-stone-400 hover:text-charcoal">
+                <button type="button" onClick={() => setIsAwardModalOpen(false)} className="text-stone-400 hover:text-charcoal">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -880,11 +895,16 @@ export default function SupplierPortfolioPage() {
 
         {/* PHOTO SHOWCASE MODAL */}
         {isPhotoModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-stone-200 shadow-2xl">
+          <div
+            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsPhotoModalOpen(false);
+            }}
+          >
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-stone-200 shadow-2xl my-auto animate-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                 <h3 className="font-bold text-charcoal text-base">Add Photo Showcase</h3>
-                <button onClick={() => setIsPhotoModalOpen(false)} className="text-stone-400 hover:text-charcoal">
+                <button type="button" onClick={() => setIsPhotoModalOpen(false)} className="text-stone-400 hover:text-charcoal">
                   <X className="w-4 h-4" />
                 </button>
               </div>

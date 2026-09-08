@@ -80,14 +80,14 @@ export default function About({ onLearnMoreClick }: AboutProps) {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="lg:col-span-6 space-y-6 pt-6 lg:pt-0"
           >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-taupe/10 text-taupe text-xs font-classico tracking-[0.2em] uppercase">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-taupe/10 text-taupe text-xs tracking-wider uppercase font-bold">
               <Sparkles className="w-3.5 h-3.5" />
               <span>{t.about.tag}</span>
             </div>
 
-            <h2 className="font-classico text-3xl sm:text-5xl uppercase font-normal text-charcoal tracking-wide leading-[1.15] text-balance">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-charcoal tracking-tight leading-[1.15] text-balance">
               {t.about.titlePart1}{' '}
-              <span className="font-serif-display lowercase italic font-normal text-taupe">
+              <span className="text-taupe">
                 {t.about.titlePart2}
               </span>
             </h2>

@@ -64,7 +64,9 @@ export default function LoginPage() {
           role: userRole,
           name: formData.name,
         });
-        if (loggedUser.role === 'host') {
+        if (loggedUser.role === 'admin') {
+          router.push('/dashboard/admin');
+        } else if (loggedUser.role === 'host') {
           router.push(loggedUser.onboarded ? '/dashboard/host' : '/dashboard/host/onboarding');
         } else {
           router.push(loggedUser.onboarded ? '/dashboard/supplier' : '/dashboard/supplier/onboarding');

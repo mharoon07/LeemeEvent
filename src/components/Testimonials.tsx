@@ -39,7 +39,7 @@ export default function Testimonials() {
           <span className="text-xs font-semibold uppercase tracking-widest text-taupe block mb-3">
             {t.testimonials.tag}
           </span>
-          <h2 className="font-serif-display text-3xl sm:text-5xl font-bold text-charcoal tracking-tight text-balance">
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-charcoal tracking-tight text-balance">
             {t.testimonials.title}
           </h2>
           <p className="mt-4 text-base text-charcoal/70 text-balance">
@@ -77,7 +77,7 @@ export default function Testimonials() {
                   </div>
 
                   {/* Quote Text */}
-                  <p className="text-sm sm:text-base text-charcoal/90 leading-relaxed font-serif italic mb-6">
+                  <p className="text-sm sm:text-base text-charcoal/90 leading-relaxed mb-6 font-medium">
                     &ldquo;{item.quote}&rdquo;
                   </p>
                 </div>
@@ -93,7 +93,7 @@ export default function Testimonials() {
                     />
                   </div>
                   <div>
-                    <h4 className="font-serif-display text-base font-bold text-charcoal">
+                    <h4 className="text-base font-bold text-charcoal">
                       {item.name}
                     </h4>
                     <span className="block text-xs font-semibold text-taupe">

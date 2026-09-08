@@ -1,28 +1,13 @@
 import type { Metadata } from 'next';
-import { Cormorant_Garamond, Plus_Jakarta_Sans, Tenor_Sans } from 'next/font/google';
+import { Bricolage_Grotesque } from 'next/font/google';
 import './globals.css';
 import SeoSchema from '@/components/SeoSchema';
 import { AuthProvider } from '@/context/AuthContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 
-const cormorant = Cormorant_Garamond({
+const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-cormorant',
-  display: 'swap',
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-plus-jakarta',
-  display: 'swap',
-});
-
-const tenorSans = Tenor_Sans({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-classico',
+  variable: '--font-bricolage',
   display: 'swap',
 });
 
@@ -85,17 +70,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${plusJakarta.variable} ${tenorSans.variable}`}>
+    <html lang="en" className={bricolage.variable}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap"
           rel="stylesheet"
         />
         <SeoSchema />
       </head>
-      <body className="bg-sand text-charcoal antialiased selection:bg-taupe selection:text-sand">
+      <body className="bg-sand text-charcoal font-sans antialiased selection:bg-taupe selection:text-sand">
         <AuthProvider>
           <LanguageProvider>{children}</LanguageProvider>
         </AuthProvider>

@@ -43,9 +43,10 @@ module.exports = {
         }
       },
       fontFamily: {
-        classico: ['"Plus Jakarta Sans"', 'var(--font-plus-jakarta)', 'Inter', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
-        serif: ['"Plus Jakarta Sans"', 'var(--font-plus-jakarta)', 'Inter', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
-        sans: ['"Plus Jakarta Sans"', 'var(--font-plus-jakarta)', 'Inter', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        bricolage: ['"Bricolage Grotesque"', 'var(--font-bricolage)', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        sans: ['"Bricolage Grotesque"', 'var(--font-bricolage)', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        classico: ['"Bricolage Grotesque"', 'var(--font-bricolage)', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        serif: ['"Bricolage Grotesque"', 'var(--font-bricolage)', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
       },
       boxShadow: {
         'soft-sm': '0 2px 10px rgba(40, 35, 29, 0.04)',

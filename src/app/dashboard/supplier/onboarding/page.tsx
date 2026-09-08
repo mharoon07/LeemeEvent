@@ -92,11 +92,6 @@ export default function SupplierOnboardingPage() {
     setStep(6); // Step 6: Pending Admin Approval status screen
   };
 
-  const handleBypassApprovalForDemo = () => {
-    approveSupplier();
-    router.push('/dashboard/supplier');
-  };
-
   return (
     <main className="min-h-screen bg-sand text-charcoal font-sans flex flex-col justify-between p-4 sm:p-6 lg:p-10 selection:bg-taupe selection:text-sand">
       {/* Header Logo */}
@@ -452,27 +447,36 @@ export default function SupplierOnboardingPage() {
                   </div>
                   <div className="flex items-center gap-2.5 font-semibold text-charcoal">
                     <CheckCircle2 className="w-4 h-4 text-emerald-700" />
-                    <span>Portfolio Images ({onboardingData.portfolio.length} photos) Received</span>
+                    <span>Portfolio Images ({onboardingData.portfolio.length} photos) Uploaded</span>
                   </div>
-                  <div className="flex items-center gap-2.5 text-amber-800">
-                    <Clock className="w-4 h-4" />
-                    <span>Public Liability & Quality Vetting in Progress</span>
+                  <div className="flex items-center gap-2.5 text-amber-800 font-semibold">
+                    <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
+                    <span>Admin Vetting & Quality Review in Progress (Est. 24-48h)</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-stone-400">
+                    <ShieldCheck className="w-4 h-4 text-stone-300" />
+                    <span>Public Marketplace Directory Activation (Pending Review)</span>
                   </div>
                 </div>
 
-                {/* Demo Instant Approval Bypass Button */}
-                <div className="pt-4 border-t border-taupe/15 space-y-3">
+                {/* Real Navigation Buttons */}
+                <div className="pt-4 border-t border-taupe/15 flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
                     type="button"
-                    onClick={handleBypassApprovalForDemo}
-                    className="btn-primary px-8 py-3.5 text-sm font-semibold inline-flex items-center gap-2"
+                    onClick={() => router.push('/dashboard/supplier')}
+                    className="w-full sm:w-auto btn-primary px-8 py-3 text-xs font-semibold inline-flex items-center justify-center gap-2"
                   >
-                    <ShieldCheck className="w-4 h-4 text-sand" />
-                    <span>Simulate Admin Approval & Access Dashboard</span>
+                    <span>View Studio Dashboard</span>
+                    <ChevronRight className="w-4 h-4" />
                   </button>
-                  <p className="text-xs text-charcoal/50 italic">
-                    (Clicking above simulates instant LEEMEVENTS admin verification for demonstration)
-                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => router.push('/')}
+                    className="w-full sm:w-auto btn-secondary px-6 py-3 text-xs font-semibold inline-flex items-center justify-center gap-2"
+                  >
+                    <span>Return to Home</span>
+                  </button>
                 </div>
               </motion.div>
             )}

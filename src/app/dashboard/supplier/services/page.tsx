@@ -432,10 +432,15 @@ export default function SupplierServicesPage() {
 
         {/* WIDE RECTANGULAR STUDIO MODAL (MAX-W-4XL) */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-            <div className="bg-white rounded-3xl max-w-4xl w-full border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+          <div
+            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsModalOpen(false);
+            }}
+          >
+            <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
               {/* Modal Top Header Bar */}
-              <div className="px-7 py-5 border-b border-stone-200 flex items-center justify-between bg-stone-50/90">
+              <div className="px-7 py-5 border-b border-stone-200 flex items-center justify-between bg-stone-50/90 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-charcoal text-white flex items-center justify-center shadow-soft-sm">
                     <Sparkles className="w-4 h-4 text-amber-300" />
@@ -450,6 +455,7 @@ export default function SupplierServicesPage() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="p-2 rounded-xl text-stone-400 hover:text-charcoal hover:bg-stone-200 transition-colors"
                 >
@@ -458,8 +464,8 @@ export default function SupplierServicesPage() {
               </div>
 
               {/* Form Body: WIDE 2-COLUMN RECTANGULAR LAYOUT */}
-              <form onSubmit={handleSubmit}>
-                <div className="p-7 grid grid-cols-1 md:grid-cols-12 gap-7">
+              <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="p-7 grid grid-cols-1 md:grid-cols-12 gap-7 overflow-y-auto flex-1">
                   {/* LEFT COLUMN: WIDE RECTANGULAR IMAGE HERO & CLOUDINARY UPLOAD (5 COLS) */}
                   <div className="md:col-span-5 space-y-4">
                     <div className="flex items-center justify-between">
@@ -644,7 +650,7 @@ export default function SupplierServicesPage() {
                 </div>
 
                 {/* MODAL BOTTOM ACTION BAR */}
-                <div className="px-7 py-4 border-t border-stone-200 bg-stone-50/80 flex items-center justify-between">
+                <div className="px-7 py-4 border-t border-stone-200 bg-stone-50/80 flex items-center justify-between shrink-0">
                   <div className="text-xs text-stone-500 font-medium hidden sm:block">
                     Changes save instantly to live database
                   </div>

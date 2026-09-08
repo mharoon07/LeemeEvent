@@ -406,176 +406,189 @@ export default function MyEventsPage() {
 
         {/* CREATE EVENT MODAL */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-200 relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="mb-6">
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-taupe uppercase tracking-wider mb-1">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>POST /api/events</span>
+          <div
+            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsModalOpen(false);
+            }}
+          >
+            <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col border border-stone-200 shadow-2xl relative overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+              {/* Modal Header */}
+              <div className="px-6 sm:px-7 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/90 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-charcoal text-white flex items-center justify-center shadow-soft-sm">
+                    <CalendarDays className="w-5 h-5 text-amber-300" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold text-charcoal">Create New Celebration</h2>
+                    <p className="text-xs text-stone-500">
+                      Set up event timeline, guest count, and requirements
+                    </p>
+                  </div>
                 </div>
-                <h2 className="text-2xl font-bold text-charcoal">Create New Celebration</h2>
-                <p className="text-xs text-stone-500 mt-1">
-                  Persists your event directly into the Supabase database.
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {errorMessage && (
-                <div className="mb-4 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 flex items-start gap-2.5">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="font-bold">Database Error</p>
-                    <p className="mt-0.5 leading-snug">{errorMessage}</p>
-                  </div>
-                </div>
-              )}
-
-              <form onSubmit={handleCreateEvent} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Event Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Liam's 30th Birthday Gala"
-                    value={newEvent.title}
-                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Event Type
-                    </label>
-                    <select
-                      value={newEvent.event_type_id}
-                      onChange={(e) => {
-                        const selectedId = e.target.value;
-                        const matched = eventTypes.find((et) => et.id === selectedId);
-                        setNewEvent({
-                          ...newEvent,
-                          event_type_id: selectedId,
-                          event_type: matched?.name || 'Custom Celebration',
-                        });
-                      }}
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
-                    >
-                      {eventTypes.length > 0 ? (
-                        eventTypes.map((et) => (
-                          <option key={et.id} value={et.id}>
-                            {et.name}
-                          </option>
-                        ))
-                      ) : (
-                        <>
-                          <option value="wedding">Wedding Celebration</option>
-                          <option value="corporate">Corporate Gala</option>
-                          <option value="birthday">Birthday / Anniversary</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
+              {/* Modal Form */}
+              <form onSubmit={handleCreateEvent} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="p-6 sm:p-7 space-y-4 overflow-y-auto flex-1">
+                  {errorMessage && (
+                    <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 flex items-start gap-2.5">
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="font-bold">Error</p>
+                        <p className="mt-0.5 leading-snug">{errorMessage}</p>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Event Date *
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={newEvent.event_date}
-                      onChange={(e) => setNewEvent({ ...newEvent, event_date: e.target.value })}
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      City / Location *
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Event Title *
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Amsterdam / London"
-                      value={newEvent.city}
-                      onChange={(e) => setNewEvent({ ...newEvent, city: e.target.value })}
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
+                      placeholder="e.g. Liam's 30th Birthday Gala"
+                      value={newEvent.title}
+                      onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Venue Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Grand Estate (Optional)"
-                      value={newEvent.venue_name}
-                      onChange={(e) => setNewEvent({ ...newEvent, venue_name: e.target.value })}
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                        Event Type
+                      </label>
+                      <select
+                        value={newEvent.event_type_id}
+                        onChange={(e) => {
+                          const selectedId = e.target.value;
+                          const matched = eventTypes.find((et) => et.id === selectedId);
+                          setNewEvent({
+                            ...newEvent,
+                            event_type_id: selectedId,
+                            event_type: matched?.name || 'Custom Celebration',
+                          });
+                        }}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
+                      >
+                        {eventTypes.length > 0 ? (
+                          eventTypes.map((et) => (
+                            <option key={et.id} value={et.id}>
+                              {et.name}
+                            </option>
+                          ))
+                        ) : (
+                          <>
+                            <option value="wedding">Wedding Celebration</option>
+                            <option value="corporate">Corporate Gala</option>
+                            <option value="birthday">Birthday / Anniversary</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                        Event Date *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={newEvent.event_date}
+                        onChange={(e) => setNewEvent({ ...newEvent, event_date: e.target.value })}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                        City / Location *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Amsterdam / London"
+                        value={newEvent.city}
+                        onChange={(e) => setNewEvent({ ...newEvent, city: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                        Venue Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Grand Estate (Optional)"
+                        value={newEvent.venue_name}
+                        onChange={(e) => setNewEvent({ ...newEvent, venue_name: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                        Guest Count
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={newEvent.guest_count}
+                        onChange={(e) => setNewEvent({ ...newEvent, guest_count: Number(e.target.value) })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                        Estimated Budget (€)
+                      </label>
+                      <input
+                        type="number"
+                        min={500}
+                        step={500}
+                        value={newEvent.estimated_budget}
+                        onChange={(e) =>
+                          setNewEvent({ ...newEvent, estimated_budget: Number(e.target.value) })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Guest Count
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={newEvent.guest_count}
-                      onChange={(e) => setNewEvent({ ...newEvent, guest_count: Number(e.target.value) })}
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Estimated Budget (€)
-                    </label>
-                    <input
-                      type="number"
-                      min={500}
-                      step={500}
-                      value={newEvent.estimated_budget}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, estimated_budget: Number(e.target.value) })
-                      }
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4 flex items-center justify-end gap-3 border-t border-stone-100">
+                {/* Modal Footer */}
+                <div className="px-6 sm:px-7 py-4 border-t border-stone-100 bg-stone-50/80 flex items-center justify-end gap-3 shrink-0">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50"
+                    className="px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-100 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="btn-primary px-5 py-2.5 text-xs font-bold flex items-center gap-2"
+                    className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 shadow-soft-sm"
                   >
                     {submitting ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Saving to Database...</span>
+                        <span>Saving Event...</span>
                       </>
                     ) : (
                       <span>Save & Launch Event</span>

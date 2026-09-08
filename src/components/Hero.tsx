@@ -128,15 +128,15 @@ export default function Hero({ onSearchSubmit }: HeroProps) {
             <span>{t.hero.badge}</span>
           </motion.div>
 
-          {/* Main Headline in Classico & Cormorant Garamond */}
+          {/* Main Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="font-classico text-4xl sm:text-6xl lg:text-7xl font-normal tracking-wide text-charcoal max-w-4xl leading-[1.15] uppercase text-balance"
+            className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-charcoal max-w-4xl leading-[1.1] text-balance"
           >
             {t.hero.titlePart1}{' '}
-            <span className="font-serif-display lowercase italic font-normal text-taupe">
+            <span className="text-taupe">
               {t.hero.titlePart2}
             </span>
           </motion.h1>

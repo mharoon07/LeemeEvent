@@ -30,6 +30,8 @@ interface LoginParams {
 interface AuthContextType {
   user: UserProfile | null;
   isLoading: boolean;
+  isSuspended: boolean;
+  suspensionReason?: string;
   error: string | null;
   login: (emailOrParams: string | LoginParams, passwordOrRole?: string | UserRole, optionalRole?: UserRole, name?: string) => Promise<UserProfile>;
   signup: (emailOrParams: string | SignupParams, passwordOrRole?: string | UserRole, roleOrName?: UserRole | string, nameOrExtra?: string | any) => Promise<UserProfile>;
@@ -39,6 +41,7 @@ interface AuthContextType {
   updateProfile: (updatedData: Partial<UserProfile>) => Promise<UserProfile>;
   completeOnboarding: (data?: any) => void;
   approveSupplier: () => void;
+  checkSuspension: () => Promise<UserProfile | null>;
   clearError: () => void;
 }
 
@@ -64,6 +67,8 @@ function toBackendRole(role: FrontendRole): 'consumer' | 'supplier' | 'admin' {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSuspended, setIsSuspended] = useState(false);
+  const [suspensionReason, setSuspensionReason] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   const saveUserLocal = useCallback((userProfile: UserProfile | null) => {
@@ -77,6 +82,129 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Real-time check if user is suspended or approved in backend
+  const checkSuspension = useCallback(async (): Promise<UserProfile | null> => {
+    const storedUserStr = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+    let localUser: Partial<UserProfile> | null = null;
+    try {
+      if (storedUserStr) localUser = JSON.parse(storedUserStr);
+    } catch {}
+
+    const currentUser = user || (localUser as UserProfile | null);
+    const userRole = normalizeRole(currentUser?.role);
+
+    try {
+      // 1. If user is a supplier, prioritize live supplier profile lookup
+      if (userRole === 'supplier') {
+        try {
+          const suppRes = await api.get('/suppliers/me/profile');
+          const suppData = suppRes.data?.data || suppRes.data || suppRes;
+          if (suppData && suppData.id) {
+            const verificationStatus = suppData.verification_status || 'pending';
+            const isApproved = verificationStatus === 'verified';
+            const isUserSuspended =
+              suppData.profile?.is_active === false ||
+              suppData.is_active === false ||
+              verificationStatus === 'suspended';
+
+            setIsSuspended(isUserSuspended);
+            setSuspensionReason(
+              suppData.verification_notes ||
+              (isUserSuspended ? 'Account suspended by administrator' : undefined)
+            );
+
+            const updatedProfile: UserProfile = {
+              id: suppData.id || suppData.profile?.id || currentUser?.id || '',
+              name: suppData.profile?.full_name || suppData.business_name || currentUser?.name || 'Valued Partner',
+              email: suppData.profile?.email || currentUser?.email || '',
+              role: 'supplier',
+              city: suppData.city || currentUser?.city,
+              phone: suppData.profile?.phone || currentUser?.phone,
+              avatar: suppData.profile?.avatar_url || currentUser?.avatar,
+              onboarded: true,
+              supplierApproved: isApproved,
+              businessName: suppData.business_name || currentUser?.businessName,
+              is_active: !isUserSuspended,
+              isActive: !isUserSuspended,
+              isSuspended: isUserSuspended,
+              verification_status: verificationStatus,
+              suspensionReason: suppData.verification_notes || undefined,
+            };
+
+            saveUserLocal(updatedProfile);
+            return updatedProfile;
+          }
+        } catch (suppErr: any) {
+          if (suppErr?.message?.toLowerCase().includes('suspended') || suppErr?.status === 403) {
+            setIsSuspended(true);
+            return null;
+          }
+        }
+      }
+
+      // 2. Query /auth/me for user status
+      const res = await api.get<{ user: any }>('/auth/me');
+      const u = res.data?.user || (res as any)?.user;
+      if (u) {
+        const mappedRole = normalizeRole(u.role || currentUser?.role);
+        let verificationStatus = u.verification_status || currentUser?.verification_status;
+        let businessName = u.business_name || currentUser?.businessName;
+        let verificationNotes = u.verification_notes;
+
+        if (mappedRole === 'supplier') {
+          try {
+            const suppRes = await api.get('/suppliers/me/profile');
+            const suppData = suppRes.data?.data || suppRes.data || suppRes;
+            if (suppData && suppData.verification_status) {
+              verificationStatus = suppData.verification_status;
+              businessName = suppData.business_name || businessName;
+              verificationNotes = suppData.verification_notes || verificationNotes;
+            }
+          } catch {}
+        }
+
+        const isUserSuspended =
+          u.is_active === false ||
+          u.isActive === false ||
+          verificationStatus === 'suspended';
+
+        const isApproved =
+          mappedRole === 'supplier'
+            ? verificationStatus === 'verified'
+            : true;
+
+        setIsSuspended(isUserSuspended);
+        setSuspensionReason(verificationNotes || u.suspension_reason || (isUserSuspended ? 'Account suspended by administrator' : undefined));
+
+        const updatedProfile: UserProfile = {
+          id: u.id || u.auth_user_id || currentUser?.id || '',
+          name: u.full_name || u.name || currentUser?.name || 'Valued Member',
+          email: u.email || currentUser?.email || '',
+          role: mappedRole,
+          city: u.city || currentUser?.city,
+          phone: u.phone || currentUser?.phone,
+          avatar: u.avatar_url || currentUser?.avatar,
+          onboarded: u.onboarded ?? currentUser?.onboarded ?? true,
+          supplierApproved: isApproved,
+          businessName: businessName || currentUser?.businessName,
+          is_active: u.is_active ?? true,
+          isActive: u.is_active ?? true,
+          isSuspended: isUserSuspended,
+          verification_status: verificationStatus,
+          suspensionReason: verificationNotes,
+        };
+
+        saveUserLocal(updatedProfile);
+        return updatedProfile;
+      }
+    } catch (err: any) {
+      if (err?.message?.toLowerCase().includes('suspended') || err?.status === 403) {
+        setIsSuspended(true);
+      }
+    }
+    return currentUser || null;
+  }, [user, saveUserLocal]);
+
   // Initialize and verify session on load
   useEffect(() => {
     const initAuth = async () => {
@@ -89,39 +217,109 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             existingLocal = JSON.parse(storedUser);
             setUser(existingLocal as UserProfile);
+            if (existingLocal.isSuspended || existingLocal.is_active === false) {
+              setIsSuspended(true);
+            }
           } catch (e) {
             localStorage.removeItem(STORAGE_KEY);
           }
         }
 
-        // If we have a JWT token, verify with backend /api/auth/me
-        if (token) {
+        // Real-time sync for suppliers
+        if (existingLocal.role === 'supplier' || token) {
           try {
-            const res = await api.get<{ user: any }>('/auth/me');
-            const u = res.data?.user || (res as any)?.user;
-            if (u) {
-              const mappedUser: UserProfile = {
-                id: u.id || u.auth_user_id || existingLocal.id || '',
-                name: existingLocal.name || u.full_name || u.name || 'Valued Member',
-                email: existingLocal.email || u.email || '',
-                role: normalizeRole(u.role || existingLocal.role),
-                city: existingLocal.city || u.city,
-                phone: existingLocal.phone || u.phone,
-                avatar: existingLocal.avatar || u.avatar_url,
-                onboarded: u.onboarded ?? existingLocal.onboarded ?? true,
-                supplierApproved:
-                  u.verification_status === 'verified' ||
-                  u.role === 'consumer' ||
-                  u.role === 'host' ||
-                  existingLocal.supplierApproved ||
-                  false,
-                businessName: u.business_name || existingLocal.businessName,
-              };
-              saveUserLocal(mappedUser);
+            if (existingLocal.role === 'supplier') {
+              try {
+                const suppRes = await api.get('/suppliers/me/profile');
+                const suppData = suppRes.data?.data || suppRes.data || suppRes;
+                if (suppData && suppData.verification_status) {
+                  const isApproved = suppData.verification_status === 'verified';
+                  const isBlocked = suppData.profile?.is_active === false || suppData.verification_status === 'suspended';
+
+                  setIsSuspended(isBlocked);
+                  const mappedUser: UserProfile = {
+                    id: suppData.id || existingLocal.id || '',
+                    name: suppData.profile?.full_name || suppData.business_name || existingLocal.name || 'Valued Member',
+                    email: suppData.profile?.email || existingLocal.email || '',
+                    role: 'supplier',
+                    city: suppData.city || existingLocal.city,
+                    phone: suppData.profile?.phone || existingLocal.phone,
+                    avatar: suppData.profile?.avatar_url || existingLocal.avatar,
+                    onboarded: true,
+                    supplierApproved: isApproved,
+                    businessName: suppData.business_name || existingLocal.businessName,
+                    is_active: !isBlocked,
+                    isActive: !isBlocked,
+                    isSuspended: isBlocked,
+                    verification_status: suppData.verification_status,
+                    suspensionReason: suppData.verification_notes || undefined,
+                  };
+                  saveUserLocal(mappedUser);
+                  return;
+                }
+              } catch {}
+            }
+
+            if (token) {
+              const res = await api.get<{ user: any }>('/auth/me');
+              const u = res.data?.user || (res as any)?.user;
+              if (u) {
+                const userRole = normalizeRole(u.role || existingLocal.role);
+                let verificationStatus = u.verification_status || existingLocal.verification_status;
+                let businessName = u.business_name || existingLocal.businessName;
+                let verificationNotes = u.verification_notes || existingLocal.suspensionReason;
+
+                if (userRole === 'supplier') {
+                  try {
+                    const suppRes = await api.get('/suppliers/me/profile');
+                    const suppData = suppRes.data?.data || suppRes.data || suppRes;
+                    if (suppData && suppData.verification_status) {
+                      verificationStatus = suppData.verification_status;
+                      businessName = suppData.business_name || businessName;
+                      verificationNotes = suppData.verification_notes || verificationNotes;
+                    }
+                  } catch {}
+                }
+
+                const userIsBlocked =
+                  u.is_active === false ||
+                  u.isActive === false ||
+                  verificationStatus === 'suspended';
+
+                const isApproved =
+                  userRole === 'supplier'
+                    ? verificationStatus === 'verified'
+                    : true;
+
+                if (userIsBlocked) {
+                  setIsSuspended(true);
+                  setSuspensionReason(verificationNotes || 'Account suspended by administrator');
+                } else {
+                  setIsSuspended(false);
+                }
+
+                const mappedUser: UserProfile = {
+                  id: u.id || u.auth_user_id || existingLocal.id || '',
+                  name: existingLocal.name || u.full_name || u.name || 'Valued Member',
+                  email: existingLocal.email || u.email || '',
+                  role: userRole,
+                  city: existingLocal.city || u.city,
+                  phone: existingLocal.phone || u.phone,
+                  avatar: existingLocal.avatar || u.avatar_url,
+                  onboarded: u.onboarded ?? existingLocal.onboarded ?? true,
+                  supplierApproved: isApproved,
+                  businessName: businessName || existingLocal.businessName,
+                  is_active: u.is_active ?? true,
+                  isActive: u.is_active ?? true,
+                  isSuspended: userIsBlocked,
+                  verification_status: verificationStatus,
+                  suspensionReason: verificationNotes,
+                };
+                saveUserLocal(mappedUser);
+              }
             }
           } catch (apiErr: any) {
-            // If token is invalid or unauthorized, clear session
-            if (apiErr.status === 401 || apiErr.status === 403) {
+            if (apiErr.status === 401) {
               tokenStorage.clear();
               saveUserLocal(null);
             }
@@ -136,6 +334,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
   }, [saveUserLocal]);
+
+  // Live polling for suspension check (every 5 seconds & on tab focus)
+  useEffect(() => {
+    if (!user || user.role === 'admin') return;
+
+    // Check on tab focus
+    const handleFocus = () => {
+      checkSuspension();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Periodic check every 5 seconds
+    const interval = setInterval(() => {
+      checkSuspension();
+    }, 5000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
+  }, [user, checkSuspension]);
 
   const clearError = () => setError(null);
 
@@ -181,13 +400,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
       });
 
+      const backendUser = res.data?.user || res.user;
+
+      // Check if user is suspended/blocked
+      if (backendUser?.is_active === false || backendUser?.isActive === false) {
+        tokenStorage.clear();
+        saveUserLocal(null);
+        const suspendedError = 'Your account has been suspended by the administrator. Please contact support at support@leemevent.com.';
+        setError(suspendedError);
+        throw new Error(suspendedError);
+      }
+
       const token = res.data?.token || res.token;
       if (token) {
         tokenStorage.set(token);
       }
 
-      const backendUser = res.data?.user || res.user;
       const userRole = normalizeRole(res.data?.role || backendUser?.role || res.role || role);
+
+      let verificationStatus = backendUser?.verification_status || (userRole === 'supplier' ? 'pending' : 'verified');
+      let businessName = backendUser?.business_name;
+
+      if (userRole === 'supplier') {
+        try {
+          const suppRes = await api.get('/suppliers/me/profile');
+          const suppData = suppRes.data?.data || suppRes.data || suppRes;
+          if (suppData && suppData.verification_status) {
+            verificationStatus = suppData.verification_status;
+            businessName = suppData.business_name || businessName;
+          }
+        } catch {
+          // Fallback
+        }
+      }
+
+      const isApproved = userRole === 'supplier' ? verificationStatus === 'verified' : true;
 
       const profile: UserProfile = {
         id: backendUser?.id || backendUser?.auth_user_id || '',
@@ -196,8 +443,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: userRole,
         city: backendUser?.city,
         onboarded: true,
-        supplierApproved: userRole === 'supplier' ? backendUser?.verification_status === 'verified' : true,
-        businessName: backendUser?.business_name,
+        supplierApproved: isApproved,
+        businessName: businessName,
+        is_active: backendUser?.is_active ?? true,
+        isActive: backendUser?.is_active ?? true,
+        isSuspended: verificationStatus === 'suspended' || backendUser?.is_active === false,
+        verification_status: verificationStatus,
       };
 
       saveUserLocal(profile);
@@ -285,6 +536,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         city: backendUser?.city || city,
         onboarded: false,
         supplierApproved: userRole === 'supplier' ? false : true,
+        verification_status: userRole === 'supplier' ? 'pending' : 'verified',
         businessName: businessName || (userRole === 'supplier' ? name : undefined),
       };
 
@@ -408,6 +660,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
+        isSuspended,
+        suspensionReason,
         error,
         login,
         signup,
@@ -417,6 +671,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateProfile,
         completeOnboarding,
         approveSupplier,
+        checkSuspension,
         clearError,
       }}
     >

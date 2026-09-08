@@ -329,8 +329,13 @@ export default function SupplierRequestsPage() {
 
         {/* ACCEPT / REJECT CONFIRMATION MODAL */}
         {activeModalRequest && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white rounded-3xl max-w-lg w-full border border-stone-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div
+            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setActiveModalRequest(null);
+            }}
+          >
+            <div className="bg-white rounded-3xl max-w-lg w-full border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
               <div className="px-6 py-5 border-b border-stone-200 flex items-center justify-between bg-stone-50">
                 <div className="flex items-center gap-2.5">
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-white ${
@@ -348,6 +353,7 @@ export default function SupplierRequestsPage() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setActiveModalRequest(null)}
                   className="p-1.5 rounded-xl text-stone-400 hover:text-charcoal hover:bg-stone-200 transition-colors"
                 >

@@ -21,6 +21,11 @@ export interface UserProfile {
   onboarded: boolean;
   supplierApproved: boolean;
   businessName?: string;
+  is_active?: boolean;
+  isActive?: boolean;
+  isSuspended?: boolean;
+  verification_status?: string;
+  suspensionReason?: string;
 }
 
 export interface AuthResponseData {
@@ -256,3 +261,84 @@ export interface ReviewItem {
   is_verified_booking: boolean;
   created_at: string;
 }
+
+// Admin Panel API Types
+export interface AdminStatsData {
+  totalHosts: number;
+  totalSuppliers: number;
+  pendingSuppliers: number;
+  totalBookings: number;
+  totalRevenue: number;
+  recentBookings?: any[];
+  pendingApprovals?: AdminSupplierItem[];
+}
+
+export interface AdminSupplierItem {
+  id: string;
+  user_id?: string;
+  business_name: string;
+  slug?: string;
+  category_id?: string;
+  category_name?: string;
+  category?: { id?: string; name?: string; icon?: string };
+  tagline?: string;
+  city?: string;
+  country?: string;
+  verification_status: 'pending' | 'verified' | 'rejected' | 'suspended';
+  verification_notes?: string;
+  starting_price?: number;
+  rating_avg?: number;
+  review_count?: number;
+  created_at?: string;
+  email?: string;
+  full_name?: string;
+  phone?: string;
+  profile?: {
+    id?: string;
+    email?: string;
+    full_name?: string;
+    phone?: string;
+    avatar_url?: string;
+  };
+  user?: {
+    id?: string;
+    full_name?: string;
+    email?: string;
+    phone?: string;
+    avatar_url?: string;
+  };
+}
+
+export interface AdminUserItem {
+  id: string;
+  email: string;
+  full_name?: string;
+  phone?: string;
+  role: 'consumer' | 'supplier' | 'admin' | 'host';
+  city?: string;
+  avatar_url?: string;
+  is_active?: boolean;
+  isActive?: boolean;
+  created_at: string;
+  total_events_count?: number;
+  total_spent?: number;
+}
+
+export interface AdminBookingItem {
+  id: string;
+  event_id?: string;
+  event_title?: string;
+  consumer_name?: string;
+  consumer_email?: string;
+  supplier_name?: string;
+  supplier_business?: string;
+  service_name?: string;
+  category?: string;
+  requested_date?: string;
+  event_date?: string;
+  status: string;
+  quote_amount?: number;
+  deposit_amount?: number;
+  created_at?: string;
+}
+

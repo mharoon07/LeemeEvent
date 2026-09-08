@@ -32,9 +32,9 @@ export default function SupplierBanner({ onSupplierClick }: SupplierBannerProps)
               <span>{t.supplierBanner.tag}</span>
             </div>
 
-            <h3 className="font-serif-display text-3xl sm:text-4xl font-bold text-charcoal leading-tight">
+            <h3 className="text-3xl sm:text-4xl font-extrabold text-charcoal leading-tight tracking-tight">
               {t.supplierBanner.titlePart1} <br className="hidden sm:inline" />
-              <span className="italic text-taupe font-normal">{t.supplierBanner.titlePart2}</span>
+              <span className="text-taupe">{t.supplierBanner.titlePart2}</span>
             </h3>
 
             <p className="text-sm sm:text-base text-charcoal/80 leading-relaxed">
