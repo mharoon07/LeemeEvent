@@ -18,17 +18,134 @@ import {
   Trash2,
   Loader2,
   AlertCircle,
+  Link as LinkIcon,
+  Sparkles,
+  Upload,
+  RefreshCw,
 } from 'lucide-react';
+
+// Curated high-res luxury host avatars
+const PRESET_AVATARS = [
+  {
+    id: 'p1',
+    name: 'Executive Host (Eleanor)',
+    url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400&auto=format&fit=crop',
+  },
+  {
+    id: 'p2',
+    name: 'Creative Director (Marcus)',
+    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop',
+  },
+  {
+    id: 'p3',
+    name: 'Milestone Producer (Sophie)',
+    url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&auto=format&fit=crop',
+  },
+  {
+    id: 'p4',
+    name: 'Gala Curator (Alexander)',
+    url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop',
+  },
+  {
+    id: 'p5',
+    name: 'Bespoke Host (Clara)',
+    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
+  },
+  {
+    id: 'p6',
+    name: 'Luxury Host (Julian)',
+    url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=400&auto=format&fit=crop',
+  },
+];
+
+/**
+ * Client-side canvas compression & square center-crop utility
+ * Compresses images of any megapixel size down to a featherlight ~25-35KB Base64 JPEG.
+ */
+function compressImageFile(file: File, maxDimension = 400, quality = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.onload = (readerEvent) => {
+      const img = document.createElement('img');
+      img.onerror = () => reject(new Error('Failed to parse image'));
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Square center crop calculation
+          const minSide = Math.min(width, height);
+          const startX = (width - minSide) / 2;
+          const startY = (height - minSide) / 2;
+
+          canvas.width = Math.min(minSide, maxDimension);
+          canvas.height = Math.min(minSide, maxDimension);
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(readerEvent.target?.result as string);
+            return;
+          }
+
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+
+          ctx.drawImage(
+            img,
+            startX,
+            startY,
+            minSide,
+            minSide,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
+
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(compressedDataUrl);
+        } catch (err) {
+          resolve(readerEvent.target?.result as string);
+        }
+      };
+      img.src = readerEvent.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function HostSettingsPage() {
   const { user, updateProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const getStorageKey = () => {
+    const uid = user?.id || 'current';
+    return `LEEMEVENTS_USER_AVATAR_${uid}`;
+  };
+
+  // Get initial cached avatar if exists
+  const getInitialAvatar = () => {
+    if (typeof window !== 'undefined') {
+      const uid = user?.id || 'current';
+      const cached = localStorage.getItem(`LEEMEVENTS_USER_AVATAR_${uid}`) || localStorage.getItem('LEEMEVENTS_USER_AVATAR_current');
+      if (cached) return cached;
+    }
+    return user?.avatar || '';
+  };
+
   const [name, setName] = useState(user?.name || 'Eleanor Vance');
   const [email, setEmail] = useState(user?.email || 'eleanor@example.com');
   const [phone, setPhone] = useState(user?.phone || '+31 6 12345678');
   const [city, setCity] = useState(user?.city || 'Den Haag, Netherlands');
-  const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [avatar, setAvatar] = useState<string>(getInitialAvatar());
+
+  // URL modal / toggle
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [customUrlInput, setCustomUrlInput] = useState('');
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
 
   // Password fields
   const [currentPassword, setCurrentPassword] = useState('');
@@ -45,30 +162,114 @@ export default function HostSettingsPage() {
       setEmail(user.email || '');
       setPhone(user.phone || '+31 6 12345678');
       setCity(user.city || 'Den Haag, Netherlands');
-      setAvatar(user.avatar || '');
+
+      const cached = typeof window !== 'undefined'
+        ? (localStorage.getItem(`LEEMEVENTS_USER_AVATAR_${user.id}`) || localStorage.getItem('LEEMEVENTS_USER_AVATAR_current'))
+        : null;
+
+      setAvatar(user.avatar || cached || '');
     }
   }, [user]);
 
-  // Handle Photo Upload
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Photo Upload with HTML5 Canvas auto-compression
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 3 * 1024 * 1024) {
-      alert('Please upload an image smaller than 3MB.');
+    // Validate type
+    if (!file.type.startsWith('image/')) {
+      setImageError('Please select a valid image file (JPG, PNG, WebP, GIF).');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64Url = reader.result as string;
-      setAvatar(base64Url);
-    };
-    reader.readAsDataURL(file);
+    try {
+      setIsProcessingImage(true);
+      setImageError(null);
+
+      // Compress and center-crop to 400x400 JPEG (~30KB)
+      const compressedDataUrl = await compressImageFile(file, 400, 0.85);
+      setAvatar(compressedDataUrl);
+
+      // Cache locally immediately so user sees it right away
+      if (typeof window !== 'undefined') {
+        const key = getStorageKey();
+        try {
+          localStorage.setItem(key, compressedDataUrl);
+          localStorage.setItem('LEEMEVENTS_USER_AVATAR_current', compressedDataUrl);
+        } catch {}
+      }
+
+      // Also auto-sync to context so navbar updates immediately
+      if (user) {
+        updateProfile({ avatar: compressedDataUrl }).catch(() => {});
+      }
+    } catch (err) {
+      console.error('Image processing failed:', err);
+      setImageError('Failed to process image. Please try another photo.');
+    } finally {
+      setIsProcessingImage(false);
+      // Reset input value so re-selecting same file triggers onChange
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleSelectPreset = (presetUrl: string) => {
+    setAvatar(presetUrl);
+    setImageError(null);
+    if (typeof window !== 'undefined') {
+      const key = getStorageKey();
+      try {
+        localStorage.setItem(key, presetUrl);
+        localStorage.setItem('LEEMEVENTS_USER_AVATAR_current', presetUrl);
+      } catch {}
+    }
+    if (user) {
+      updateProfile({ avatar: presetUrl }).catch(() => {});
+    }
+  };
+
+  const handleApplyCustomUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = customUrlInput.trim();
+    if (!url) return;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      setImageError('Please enter a valid URL starting with https://');
+      return;
+    }
+
+    setAvatar(url);
+    setImageError(null);
+    setCustomUrlInput('');
+    setShowUrlInput(false);
+
+    if (typeof window !== 'undefined') {
+      const key = getStorageKey();
+      try {
+        localStorage.setItem(key, url);
+        localStorage.setItem('LEEMEVENTS_USER_AVATAR_current', url);
+      } catch {}
+    }
+    if (user) {
+      updateProfile({ avatar: url }).catch(() => {});
+    }
   };
 
   const handleRemovePhoto = () => {
     setAvatar('');
+    setImageError(null);
+    if (typeof window !== 'undefined') {
+      const key = getStorageKey();
+      try {
+        localStorage.removeItem(key);
+        localStorage.removeItem('LEEMEVENTS_USER_AVATAR_current');
+      } catch {}
+    }
+    if (user) {
+      updateProfile({ avatar: '' }).catch(() => {});
+    }
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -77,16 +278,32 @@ export default function HostSettingsPage() {
     setSaveSuccess(false);
 
     try {
+      const updatedAvatar = avatar || undefined;
+
+      // Ensure local storage is up to date
+      if (typeof window !== 'undefined') {
+        const key = getStorageKey();
+        if (updatedAvatar) {
+          try {
+            localStorage.setItem(key, updatedAvatar);
+            localStorage.setItem('LEEMEVENTS_USER_AVATAR_current', updatedAvatar);
+          } catch {}
+        } else {
+          localStorage.removeItem(key);
+          localStorage.removeItem('LEEMEVENTS_USER_AVATAR_current');
+        }
+      }
+
       await updateProfile({
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
         city: city.trim(),
-        avatar: avatar || undefined,
+        avatar: updatedAvatar,
       });
 
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3500);
+      setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err) {
       console.error('Failed to update profile', err);
     } finally {
@@ -127,7 +344,7 @@ export default function HostSettingsPage() {
 
   return (
     <HostLayout>
-      <div className="space-y-8 max-w-4xl mx-auto pb-16">
+      <div className="space-y-8 max-w-4xl mx-auto pb-16 w-full">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-stone-200/80">
           <div>
@@ -144,7 +361,7 @@ export default function HostSettingsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-white border border-stone-200/90 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-stone-700 shadow-soft-sm">
+          <div className="flex items-center gap-2 bg-white border border-stone-200/90 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-stone-700 shadow-soft-sm self-start md:self-auto">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span>Verified Event Host</span>
           </div>
@@ -154,14 +371,36 @@ export default function HostSettingsPage() {
         <form onSubmit={handleSaveProfile} className="space-y-6">
           {/* Avatar / Photo Card */}
           <div className="bg-white border border-stone-200/90 rounded-3xl p-6 sm:p-8 shadow-soft-sm space-y-6">
-            <h2 className="text-base font-bold text-charcoal border-b border-stone-100 pb-3">
-              Profile Picture
-            </h2>
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-charcoal">
+                  Profile Picture
+                </h2>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Your photo is visible to suppliers and collaborators across the platform.
+                </p>
+              </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="relative">
+              {avatar && (
+                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <Check className="w-3 h-3" />
+                  <span>Photo Active</span>
+                </span>
+              )}
+            </div>
+
+            {imageError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{imageError}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+              {/* Avatar Preview */}
+              <div className="relative shrink-0">
                 {avatar ? (
-                  <div className="relative w-24 h-24 rounded-full overflow-hidden shadow-soft-md ring-4 ring-taupe/20">
+                  <div className="relative w-28 h-28 rounded-full overflow-hidden shadow-soft-md ring-4 ring-taupe/20 bg-stone-100">
                     <Image
                       src={avatar}
                       alt={name}
@@ -169,9 +408,14 @@ export default function HostSettingsPage() {
                       className="object-cover"
                       unoptimized={Boolean(avatar && (avatar.startsWith('data:') || avatar.startsWith('http')))}
                     />
+                    {isProcessingImage && (
+                      <div className="absolute inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-white animate-spin" />
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-taupe text-white text-3xl font-bold flex items-center justify-center shadow-soft-md ring-4 ring-taupe/20">
+                  <div className="w-28 h-28 rounded-full bg-gradient-to-br from-charcoal to-taupe text-white text-4xl font-bold flex items-center justify-center shadow-soft-md ring-4 ring-taupe/20">
                     {displayInitial}
                   </div>
                 )}
@@ -179,8 +423,8 @@ export default function HostSettingsPage() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-charcoal hover:bg-taupe text-white flex items-center justify-center shadow-md transition-colors"
-                  title="Upload photo"
+                  className="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-charcoal hover:bg-taupe text-white flex items-center justify-center shadow-md transition-all hover:scale-105"
+                  title="Upload photo from computer"
                 >
                   <Camera className="w-4 h-4" />
                 </button>
@@ -189,34 +433,112 @@ export default function HostSettingsPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png, image/jpeg, image/webp, image/gif, image/heic"
                 onChange={handleImageChange}
                 className="hidden"
               />
 
-              <div className="space-y-2 text-center sm:text-left">
+              {/* Upload & Action Controls */}
+              <div className="flex-1 space-y-4 text-center sm:text-left">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="btn-primary px-4 py-2 text-xs font-semibold"
+                    disabled={isProcessingImage}
+                    className="btn-primary px-4 py-2 text-xs font-semibold flex items-center gap-1.5 shadow-soft-sm"
                   >
-                    Upload New Photo
+                    {isProcessingImage ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5" />
+                    )}
+                    <span>Upload New Photo</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowUrlInput(!showUrlInput)}
+                    className="px-3.5 py-2 rounded-xl border border-stone-200/90 bg-[#FAF8F5] hover:bg-stone-100 text-stone-700 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                  >
+                    <LinkIcon className="w-3.5 h-3.5 text-taupe" />
+                    <span>Paste Image Link</span>
+                  </button>
+
                   {avatar && (
                     <button
                       type="button"
                       onClick={handleRemovePhoto}
-                      className="px-3 py-2 rounded-xl border border-stone-200 hover:bg-red-50 text-stone-600 hover:text-red-600 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                      className="px-3.5 py-2 rounded-xl border border-stone-200 hover:bg-red-50 text-stone-600 hover:text-red-600 text-xs font-semibold transition-colors flex items-center gap-1.5"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Remove</span>
+                      <span>Remove Photo</span>
                     </button>
                   )}
                 </div>
-                <p className="text-[11px] text-stone-400">
-                  Allowed JPG, PNG, WebP or GIF. Max size 3MB. Picture stays permanently saved.
+
+                <p className="text-[11px] text-stone-500">
+                  Supported formats: JPG, PNG, WebP, GIF. High-resolution photos are auto-optimized for crystal clarity and instant loading.
                 </p>
+
+                {/* Direct Image URL Bar */}
+                {showUrlInput && (
+                  <div className="p-3 bg-[#FAF8F5] rounded-2xl border border-stone-200/90 space-y-2 animate-in fade-in duration-150">
+                    <label className="text-xs font-semibold text-charcoal block">
+                      Direct Photo URL (HTTPS)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={customUrlInput}
+                        onChange={(e) => setCustomUrlInput(e.target.value)}
+                        placeholder="https://images.unsplash.com/photo-..."
+                        className="flex-1 bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs text-charcoal focus:outline-none focus:border-taupe"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCustomUrl}
+                        className="btn-primary px-4 py-2 text-xs font-semibold"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Curated Luxury Preset Avatars */}
+                <div className="pt-2">
+                  <span className="text-[11px] font-semibold text-stone-500 flex items-center gap-1 mb-2">
+                    <Sparkles className="w-3 h-3 text-taupe" />
+                    <span>Or choose a curated profile portrait:</span>
+                  </span>
+
+                  <div className="flex items-center justify-center sm:justify-start gap-2.5 flex-wrap">
+                    {PRESET_AVATARS.map((p) => {
+                      const isSelected = avatar === p.url;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleSelectPreset(p.url)}
+                          className={`relative w-10 h-10 rounded-full overflow-hidden transition-all hover:scale-110 ${
+                            isSelected
+                              ? 'ring-3 ring-charcoal ring-offset-2 shadow-soft-sm'
+                              : 'opacity-70 hover:opacity-100 ring-1 ring-stone-200'
+                          }`}
+                          title={`Select ${p.name}`}
+                        >
+                          <Image
+                            src={p.url}
+                            alt={p.name}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -284,20 +606,20 @@ export default function HostSettingsPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-stone-100 flex items-center justify-between">
+            <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-3">
               {saveSuccess ? (
-                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200 flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5" />
-                  <span>Profile Changes Saved Permanently</span>
+                  <span>Profile & Picture Changes Saved Permanently</span>
                 </span>
               ) : (
-                <span className="text-xs text-stone-400">All updates sync across your host portal.</span>
+                <span className="text-xs text-stone-400">All updates sync across your host portal in real-time.</span>
               )}
 
               <button
                 type="submit"
                 disabled={isSaving}
-                className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 shadow-soft-sm hover:shadow-soft-md transition-all"
+                className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 shadow-soft-sm hover:shadow-soft-md transition-all self-end sm:self-auto"
               >
                 {isSaving ? (
                   <>

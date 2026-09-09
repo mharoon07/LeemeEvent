@@ -33,6 +33,12 @@ export default function SupplierProfilePage() {
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('Spain');
   const [radiusKm, setRadiusKm] = useState('50');
+  const [yearsInBusiness, setYearsInBusiness] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('LEEMEVENTS_SUPPLIER_YEARS_IN_BUSINESS') || '';
+    }
+    return '';
+  });
   const [phone, setPhone] = useState('');
   const [bio, setBio] = useState('');
 
@@ -43,9 +49,23 @@ export default function SupplierProfilePage() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const getStorageKeys = () => {
+    const uid = user?.id || 'current';
+    return {
+      userYears: `LEEMEVENTS_SUPPLIER_YEARS_IN_BUSINESS_${uid}`,
+      globalYears: 'LEEMEVENTS_SUPPLIER_YEARS_IN_BUSINESS',
+    };
+  };
+
   const loadProfile = async () => {
     try {
       setLoading(true);
+      const keys = getStorageKeys();
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem(keys.userYears) || localStorage.getItem(keys.globalYears);
+        if (cached) setYearsInBusiness(cached);
+      }
+
       const data = await supplierPortalApi.getProfile();
       if (data) {
         setBrand(data.business_name || user?.businessName || '');
@@ -54,6 +74,25 @@ export default function SupplierProfilePage() {
         setRadiusKm(String(data.service_radius_km || 50));
         setPhone(data.profile?.phone || user?.phone || '');
         setBio(data.bio || '');
+
+        const backendYears =
+          data.years_in_business !== undefined && data.years_in_business !== null && String(data.years_in_business).trim() !== ''
+            ? String(data.years_in_business)
+            : data.yearsInBusiness !== undefined && data.yearsInBusiness !== null && String(data.yearsInBusiness).trim() !== ''
+            ? String(data.yearsInBusiness)
+            : data.experience_years !== undefined && data.experience_years !== null
+            ? String(data.experience_years)
+            : data.experience !== undefined && data.experience !== null
+            ? String(data.experience)
+            : null;
+
+        if (backendYears) {
+          setYearsInBusiness(backendYears);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(keys.userYears, backendYears);
+            localStorage.setItem(keys.globalYears, backendYears);
+          }
+        }
       }
     } catch (err) {
       console.warn('Failed to load supplier profile:', err);
@@ -64,17 +103,29 @@ export default function SupplierProfilePage() {
 
   useEffect(() => {
     loadProfile();
-  }, []);
+  }, [user?.id]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setSavingProfile(true);
+      const yVal = yearsInBusiness.trim();
+      const keys = getStorageKeys();
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(keys.userYears, yVal);
+        localStorage.setItem(keys.globalYears, yVal);
+      }
+
       const payload = {
         business_name: brand.trim(),
         city: city.trim(),
         country: country.trim(),
         service_radius_km: Number(radiusKm),
+        years_in_business: yVal,
+        yearsInBusiness: yVal,
+        experience_years: parseInt(yVal, 10) || 0,
+        experience: yVal,
         bio: bio.trim(),
       };
 
@@ -212,6 +263,24 @@ export default function SupplierProfilePage() {
                 value={radiusKm}
                 onChange={(e) => setRadiusKm(e.target.value)}
                 className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs text-charcoal focus:outline-none focus:border-taupe"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-charcoal mb-1 block">Years in Business (Experience)</label>
+              <input
+                type="text"
+                value={yearsInBusiness}
+                onChange={(e) => {
+                  setYearsInBusiness(e.target.value);
+                  const keys = getStorageKeys();
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem(keys.userYears, e.target.value);
+                    localStorage.setItem(keys.globalYears, e.target.value);
+                  }
+                }}
+                placeholder="e.g. 8"
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs text-charcoal focus:outline-none focus:border-taupe font-mono font-bold"
               />
             </div>
 

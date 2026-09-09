@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import SupplierLayout from '@/components/dashboard/SupplierLayout';
 import { useAuth } from '@/context/AuthContext';
-import { supplierPortalApi } from '@/lib/services/consumerApi';
+import { supplierPortalApi, reviewsApi, supplierBookingsApi } from '@/lib/services/consumerApi';
 import {
   Briefcase,
   Award,
@@ -27,6 +27,9 @@ import {
   Tag,
   Save,
   Clock,
+  ThumbsUp,
+  User,
+  Heart
 } from 'lucide-react';
 
 interface MilestoneItem {
@@ -63,8 +66,15 @@ export default function SupplierPortfolioPage() {
   const [profile, setProfile] = useState<any>(null);
   const [tagline, setTagline] = useState('');
   const [bio, setBio] = useState('');
-  const [yearsInBusiness, setYearsInBusiness] = useState('8');
+  const [yearsInBusiness, setYearsInBusiness] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('LEEMEVENTS_SUPPLIER_YEARS_IN_BUSINESS') || '';
+    }
+    return '';
+  });
   const [eventsCompleted, setEventsCompleted] = useState('240+');
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [completedBookingsCount, setCompletedBookingsCount] = useState<number>(0);
 
   // CV Sections
   const [milestones, setMilestones] = useState<MilestoneItem[]>([
@@ -87,13 +97,6 @@ export default function SupplierPortfolioPage() {
   ]);
 
   const [certifications, setCertifications] = useState<CertificationItem[]>([
-    {
-      id: 'c-1',
-      name: 'Commercial Public Liability Insurance (€5M Coverage)',
-      issuer: 'Allianz Luxury Events Underwriting',
-      year: '2026',
-      verified: true,
-    },
     {
       id: 'c-2',
       name: 'HACCP Level 3 Master Food Safety Certification',
@@ -152,24 +155,91 @@ export default function SupplierPortfolioPage() {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [photoForm, setPhotoForm] = useState({ media_url: '', title: '', category_tag: 'Weddings', caption: '' });
 
+  const getStorageKeys = () => {
+    const uid = user?.id || 'current';
+    return {
+      userCv: `LEEMEVENTS_SUPPLIER_PORTFOLIO_CV_${uid}`,
+      globalCv: 'LEEMEVENTS_SUPPLIER_PORTFOLIO_CV',
+      userYears: `LEEMEVENTS_SUPPLIER_YEARS_IN_BUSINESS_${uid}`,
+      globalYears: 'LEEMEVENTS_SUPPLIER_YEARS_IN_BUSINESS',
+    };
+  };
+
   const loadAllData = async () => {
     try {
       setLoading(true);
-      const [profData, portData] = await Promise.all([
+      const keys = getStorageKeys();
+      let cachedCv: any = null;
+      let cachedYears: string | null = null;
+
+      if (typeof window !== 'undefined') {
+        try {
+          const rawCv = localStorage.getItem(keys.userCv) || localStorage.getItem(keys.globalCv);
+          if (rawCv) cachedCv = JSON.parse(rawCv);
+          cachedYears = localStorage.getItem(keys.userYears) || localStorage.getItem(keys.globalYears);
+        } catch (e) {}
+      }
+
+      // Pre-populate immediately from local storage for instant responsiveness
+      if (cachedYears) {
+        setYearsInBusiness(cachedYears);
+      }
+      if (cachedCv?.tagline) setTagline(cachedCv.tagline);
+      if (cachedCv?.bio) setBio(cachedCv.bio);
+      if (cachedCv?.milestones && Array.isArray(cachedCv.milestones)) setMilestones(cachedCv.milestones);
+      if (cachedCv?.certifications && Array.isArray(cachedCv.certifications)) setCertifications(cachedCv.certifications);
+      if (cachedCv?.specialties && Array.isArray(cachedCv.specialties)) setSpecialties(cachedCv.specialties);
+      if (cachedCv?.awards && Array.isArray(cachedCv.awards)) setAwards(cachedCv.awards);
+
+      const [profData, portData, revData, reqData] = await Promise.all([
         supplierPortalApi.getProfile().catch(() => null),
         supplierPortalApi.getPortfolio().catch(() => []),
+        reviewsApi.getReviews(user?.id).catch(() => []),
+        supplierBookingsApi.getMyRequests().catch(() => []),
       ]);
 
       if (profData) {
         setProfile(profData);
-        setTagline(profData.tagline || 'Bespoke Celebration Scenography & Luxury Gastronomy');
+        setTagline(profData.tagline || cachedCv?.tagline || 'Bespoke Celebration Scenography & Luxury Gastronomy');
         setBio(
           profData.bio ||
+            cachedCv?.bio ||
             'Pioneering unforgettable celebration aesthetics across Europe. From private château weddings to high-profile luxury galas, we deliver world-class precision, ethical artisan sourcing, and turnkey execution.'
         );
+
+        const backendYears =
+          profData.years_in_business !== undefined && profData.years_in_business !== null && String(profData.years_in_business).trim() !== ''
+            ? String(profData.years_in_business)
+            : profData.yearsInBusiness !== undefined && profData.yearsInBusiness !== null && String(profData.yearsInBusiness).trim() !== ''
+            ? String(profData.yearsInBusiness)
+            : profData.experience_years !== undefined && profData.experience_years !== null
+            ? String(profData.experience_years)
+            : profData.experience !== undefined && profData.experience !== null
+            ? String(profData.experience)
+            : null;
+
+        const resolvedYears = backendYears || cachedYears || yearsInBusiness || '2';
+        setYearsInBusiness(resolvedYears);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(keys.userYears, resolvedYears);
+          localStorage.setItem(keys.globalYears, resolvedYears);
+        }
+      } else if (cachedYears) {
+        setYearsInBusiness(cachedYears);
       }
 
       setPortfolioItems(portData || []);
+      setReviews(Array.isArray(revData) ? revData : []);
+
+      if (profData?.events_executed !== undefined && Number(profData.events_executed) > 0) {
+        setCompletedBookingsCount(Number(profData.events_executed));
+      } else if (Array.isArray(reqData)) {
+        const completed = reqData.filter((r: any) => {
+          const s = (r.status || '').toLowerCase();
+          return s === 'completed' || s === 'done';
+        });
+        setCompletedBookingsCount(completed.length);
+      }
     } catch (err) {
       console.error('Failed to load portfolio data:', err);
     } finally {
@@ -179,15 +249,75 @@ export default function SupplierPortfolioPage() {
 
   useEffect(() => {
     loadAllData();
-  }, []);
+  }, [user?.id]);
+
+  const persistToLocalStorage = (data: Partial<{
+    tagline: string;
+    bio: string;
+    yearsInBusiness: string;
+    milestones: MilestoneItem[];
+    certifications: CertificationItem[];
+    specialties: string[];
+    awards: AwardItem[];
+  }>) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const keys = getStorageKeys();
+      const currentRaw = localStorage.getItem(keys.userCv) || localStorage.getItem(keys.globalCv);
+      const current = currentRaw ? JSON.parse(currentRaw) : {};
+      const updated = {
+        tagline,
+        bio,
+        yearsInBusiness,
+        milestones,
+        certifications,
+        specialties,
+        awards,
+        ...current,
+        ...data,
+      };
+      localStorage.setItem(keys.userCv, JSON.stringify(updated));
+      localStorage.setItem(keys.globalCv, JSON.stringify(updated));
+      if (data.yearsInBusiness !== undefined) {
+        localStorage.setItem(keys.userYears, data.yearsInBusiness);
+        localStorage.setItem(keys.globalYears, data.yearsInBusiness);
+      }
+    } catch (e) {}
+  };
+
+  const handleYearsChange = (val: string) => {
+    setYearsInBusiness(val);
+    persistToLocalStorage({ yearsInBusiness: val });
+  };
 
   const handleSaveCVProfile = async () => {
     try {
       setSavingCV(true);
-      await supplierPortalApi.updateProfile({
+      const yVal = yearsInBusiness.trim();
+
+      persistToLocalStorage({
         tagline: tagline.trim(),
         bio: bio.trim(),
+        yearsInBusiness: yVal,
+        milestones,
+        certifications,
+        specialties,
+        awards,
       });
+
+      const payload = {
+        tagline: tagline.trim(),
+        bio: bio.trim(),
+        years_in_business: yVal,
+        yearsInBusiness: yVal,
+        experience_years: parseInt(yVal, 10) || 0,
+        experience: yVal,
+      };
+
+      await supplierPortalApi.updateProfile(payload).catch((err) => {
+        console.warn('Backend updateProfile notice:', err);
+      });
+
       setCvSaved(true);
       setTimeout(() => setCvSaved(false), 3500);
     } catch (err: any) {
@@ -202,19 +332,23 @@ export default function SupplierPortfolioPage() {
     e.preventDefault();
     if (!milestoneForm.title || !milestoneForm.role) return;
 
-    setMilestones([
+    const updated = [
       ...milestones,
       {
         id: `m-${Date.now()}`,
         ...milestoneForm,
       },
-    ]);
+    ];
+    setMilestones(updated);
+    persistToLocalStorage({ milestones: updated });
     setMilestoneForm({ title: '', role: '', venue: '', year: '2025', description: '' });
     setIsMilestoneModalOpen(false);
   };
 
   const handleDeleteMilestone = (id: string) => {
-    setMilestones(milestones.filter((m) => m.id !== id));
+    const updated = milestones.filter((m) => m.id !== id);
+    setMilestones(updated);
+    persistToLocalStorage({ milestones: updated });
   };
 
   // Cert Actions
@@ -222,20 +356,24 @@ export default function SupplierPortfolioPage() {
     e.preventDefault();
     if (!certForm.name || !certForm.issuer) return;
 
-    setCertifications([
+    const updated = [
       ...certifications,
       {
         id: `c-${Date.now()}`,
         ...certForm,
         verified: true,
       },
-    ]);
+    ];
+    setCertifications(updated);
+    persistToLocalStorage({ certifications: updated });
     setCertForm({ name: '', issuer: '', year: '2026' });
     setIsCertModalOpen(false);
   };
 
   const handleDeleteCert = (id: string) => {
-    setCertifications(certifications.filter((c) => c.id !== id));
+    const updated = certifications.filter((c) => c.id !== id);
+    setCertifications(updated);
+    persistToLocalStorage({ certifications: updated });
   };
 
   // Award Actions
@@ -243,19 +381,23 @@ export default function SupplierPortfolioPage() {
     e.preventDefault();
     if (!awardForm.title || !awardForm.organization) return;
 
-    setAwards([
+    const updated = [
       ...awards,
       {
         id: `a-${Date.now()}`,
         ...awardForm,
       },
-    ]);
+    ];
+    setAwards(updated);
+    persistToLocalStorage({ awards: updated });
     setAwardForm({ title: '', organization: '', year: '2025' });
     setIsAwardModalOpen(false);
   };
 
   const handleDeleteAward = (id: string) => {
-    setAwards(awards.filter((a) => a.id !== id));
+    const updated = awards.filter((a) => a.id !== id);
+    setAwards(updated);
+    persistToLocalStorage({ awards: updated });
   };
 
   // Specialty Tags
@@ -263,13 +405,17 @@ export default function SupplierPortfolioPage() {
     if ('key' in e && e.key !== 'Enter') return;
     if (!newSpecialtyInput.trim()) return;
     if (!specialties.includes(newSpecialtyInput.trim())) {
-      setSpecialties([...specialties, newSpecialtyInput.trim()]);
+      const updated = [...specialties, newSpecialtyInput.trim()];
+      setSpecialties(updated);
+      persistToLocalStorage({ specialties: updated });
     }
     setNewSpecialtyInput('');
   };
 
   const handleRemoveSpecialty = (item: string) => {
-    setSpecialties(specialties.filter((s) => s !== item));
+    const updated = specialties.filter((s) => s !== item);
+    setSpecialties(updated);
+    persistToLocalStorage({ specialties: updated });
   };
 
   // Photo Showcase Actions
@@ -368,39 +514,68 @@ export default function SupplierPortfolioPage() {
           )}
 
           {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-stone-50 border border-stone-200/70 text-center">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-stone-50 border border-stone-200/70 text-center">
+            <div className="p-2">
               <span className="text-[10px] text-stone-400 uppercase font-bold block">Years in Business</span>
-              <span className="text-base font-bold text-charcoal font-mono mt-0.5 block">{yearsInBusiness} Years</span>
+              <span className="text-base font-bold text-charcoal font-mono mt-0.5 block">
+                {yearsInBusiness ? `${yearsInBusiness} Years Experience` : 'Years Experience'}
+              </span>
             </div>
-            <div>
+            <div className="p-2">
               <span className="text-[10px] text-stone-400 uppercase font-bold block">Events Executed</span>
-              <span className="text-base font-bold text-charcoal font-mono mt-0.5 block">{eventsCompleted}</span>
+              <span className="text-base font-bold text-charcoal font-mono mt-0.5 block">
+                {completedBookingsCount > 0 ? `${completedBookingsCount} Events Completed` : (eventsCompleted || '10+ Celebrations')}
+              </span>
             </div>
-            <div>
-              <span className="text-[10px] text-stone-400 uppercase font-bold block">Public Liability</span>
-              <span className="text-base font-bold text-emerald-700 font-mono mt-0.5 block">€5,000,000</span>
-            </div>
-            <div>
+            <div className="p-2">
               <span className="text-[10px] text-stone-400 uppercase font-bold block">Client Rating</span>
-              <span className="text-base font-bold text-charcoal flex items-center justify-center gap-1 mt-0.5">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                <span>4.96 / 5.0</span>
+              <span className="text-base font-bold text-charcoal flex items-center justify-center gap-1.5 mt-0.5">
+                {reviews.length > 0 || (profile?.rating_avg && Number(profile.rating_avg) > 0) ? (
+                  <>
+                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    <span>
+                      {reviews.length > 0
+                        ? (reviews.reduce((acc, r) => acc + Number(r.overall_rating || r.rating_overall || 5), 0) / reviews.length).toFixed(2)
+                        : Number(profile.rating_avg).toFixed(2)}{' '}
+                      / 5.0
+                    </span>
+                    <span className="text-xs text-stone-500 font-normal font-sans">({reviews.length} reviews)</span>
+                  </>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                    ★ New Partner (0 reviews)
+                  </span>
+                )}
               </span>
             </div>
           </div>
 
-          {/* Tagline & Editorial Bio Editor */}
+          {/* Tagline, Years in Business & Editorial Bio Editor */}
           <div className="space-y-4">
-            <div>
-              <label className="text-xs font-bold text-charcoal mb-1 block">Brand Headline & Tagline</label>
-              <input
-                type="text"
-                value={tagline}
-                onChange={(e) => setTagline(e.target.value)}
-                placeholder="e.g. Bespoke Scenography & Michelin-Grade Gastronomy for Milestone Celebrations"
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs text-charcoal focus:outline-none focus:border-taupe font-medium"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="sm:col-span-2">
+                <label className="text-xs font-bold text-charcoal mb-1 block">Brand Headline & Tagline</label>
+                <input
+                  type="text"
+                  value={tagline}
+                  onChange={(e) => {
+                    setTagline(e.target.value);
+                    persistToLocalStorage({ tagline: e.target.value });
+                  }}
+                  placeholder="e.g. Bespoke Scenography & Michelin-Grade Gastronomy for Milestone Celebrations"
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs text-charcoal focus:outline-none focus:border-taupe font-medium"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-charcoal mb-1 block">Years in Business (Experience)</label>
+                <input
+                  type="text"
+                  value={yearsInBusiness}
+                  onChange={(e) => handleYearsChange(e.target.value)}
+                  placeholder="e.g. 8"
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-xs text-charcoal focus:outline-none focus:border-taupe font-mono font-bold"
+                />
+              </div>
             </div>
 
             <div>
@@ -408,7 +583,10 @@ export default function SupplierPortfolioPage() {
               <textarea
                 rows={3}
                 value={bio}
-                onChange={(e) => setBio(e.target.value)}
+                onChange={(e) => {
+                  setBio(e.target.value);
+                  persistToLocalStorage({ bio: e.target.value });
+                }}
                 placeholder="Detail your background, creative approach, vendor standards, and client commitment..."
                 className="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-xs text-charcoal focus:outline-none focus:border-taupe resize-none leading-relaxed"
               />
@@ -670,6 +848,109 @@ export default function SupplierPortfolioPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Section 6: Verified Client Reviews & Ratings Showcase */}
+        <div className="bg-white border border-stone-200/90 rounded-3xl p-6 sm:p-8 shadow-soft-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-soft-sm">
+                <Star className="w-4 h-4 fill-white" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-charcoal">Verified Client Reviews & Testimonials</h2>
+                <span className="text-[11px] text-stone-500">Authentic ratings from completed milestone celebrations</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {reviews.length > 0 || (profile?.rating_avg && Number(profile.rating_avg) > 0) ? (
+                <span className="px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold font-mono flex items-center gap-1.5">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                  <span>
+                    {reviews.length > 0
+                      ? (reviews.reduce((acc, r) => acc + Number(r.overall_rating || r.rating_overall || 5), 0) / reviews.length).toFixed(2)
+                      : Number(profile.rating_avg).toFixed(2)}{' '}
+                    / 5.0
+                  </span>
+                  <span className="text-stone-400 font-normal">({reviews.length} reviews)</span>
+                </span>
+              ) : (
+                <span className="px-3 py-1 rounded-xl bg-stone-100 border border-stone-200 text-stone-600 text-xs font-semibold">
+                  0 Verified Reviews
+                </span>
+              )}
+            </div>
+          </div>
+
+          {reviews.length === 0 ? (
+            <div className="p-8 text-center bg-stone-50 rounded-2xl border border-dashed border-stone-200 space-y-2">
+              <Star className="w-6 h-6 text-stone-300 mx-auto" />
+              <p className="text-xs text-stone-500 font-medium">
+                No reviews yet. When event hosts complete bookings, their verified ratings will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {reviews.map((rev) => {
+                const reviewerName =
+                  rev.consumer_name ||
+                  rev.consumer?.full_name ||
+                  rev.consumer?.name ||
+                  rev.reviewer_name ||
+                  rev.consumer_email?.split('@')[0] ||
+                  'Verified Host';
+
+                const score = Number(rev.overall_rating || rev.rating_overall || 5);
+                const reviewDate = rev.created_at
+                  ? new Date(rev.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  : 'Recent Celebration';
+
+                return (
+                  <div
+                    key={rev.id}
+                    className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-charcoal text-white font-bold flex items-center justify-center text-xs">
+                          {reviewerName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-charcoal">{reviewerName}</h4>
+                          <span className="text-[10px] text-stone-400 font-medium">{reviewDate}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-stone-200 shadow-soft-sm">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <span className="text-xs font-bold text-charcoal font-mono">{score.toFixed(1)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5 text-[9px] font-semibold text-stone-600">
+                      <span className="px-2 py-0.5 rounded bg-white border border-stone-200">
+                        Punctuality: {rev.rating_punctuality || 5}★
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-white border border-stone-200">
+                        Quality: {rev.rating_quality || 5}★
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-white border border-stone-200">
+                        Comm: {rev.rating_communication || 5}★
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-white border border-stone-200">
+                        Value: {rev.rating_value || 5}★
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-stone-700 leading-relaxed italic bg-white p-3 rounded-xl border border-stone-100">
+                      &ldquo;{rev.comment || 'Outstanding bespoke experience provided with great professionalism.'}&rdquo;
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

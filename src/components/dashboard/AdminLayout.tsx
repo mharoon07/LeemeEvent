@@ -143,7 +143,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const isAdmin = user?.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-[#F8F7F4] text-charcoal flex flex-col lg:flex-row font-sans selection:bg-taupe selection:text-sand">
+    <div className="min-h-screen bg-[#F8F7F4] text-charcoal flex font-sans selection:bg-taupe selection:text-sand w-full overflow-x-hidden">
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden lg:flex w-64 shrink-0 bg-white border-r border-stone-200/90 flex-col justify-between p-5 fixed top-0 bottom-0 left-0 z-40 shadow-[1px_0_12px_rgba(0,0,0,0.03)]">
         <div className="space-y-5">
@@ -382,9 +382,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       )}
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-h-screen">
+      <div className="flex-1 lg:pl-64 flex flex-col min-h-screen w-full min-w-0">
         {/* TOP BAR */}
-        <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/70 backdrop-blur-md border-b border-stone-200/80 sticky top-0 z-30">
+        <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/70 backdrop-blur-md border-b border-stone-200/80 sticky top-0 z-30 w-full">
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

@@ -376,13 +376,26 @@ export default function SupplierServicesPage() {
                       <h3 className="font-bold text-white text-lg line-clamp-1 group-hover:text-amber-200 transition-colors">
                         {service.name}
                       </h3>
-                      <div className="flex items-center gap-2 text-stone-200 text-xs mt-0.5">
-                        <span className="flex items-center gap-1 text-amber-300">
-                          <Star className="w-3 h-3 fill-amber-300" />
-                          <span className="font-semibold">5.0</span>
-                        </span>
+                      <div className="flex items-center gap-2 text-stone-200 text-xs mt-0.5 flex-wrap">
+                        {Number(service.review_count || 0) > 0 && Number(service.rating_avg || 0) > 0 ? (
+                          <span className="flex items-center gap-1 text-amber-300 font-semibold">
+                            <Star className="w-3 h-3 fill-amber-300" />
+                            <span>{Number(service.rating_avg).toFixed(1)}</span>
+                            <span className="text-[10px] text-white/80">({service.review_count})</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-stone-300 font-semibold">
+                            ★ New Service
+                          </span>
+                        )}
                         <span>•</span>
                         <span>{service.duration_minutes ? `${service.duration_minutes} mins` : 'Flexible duration'}</span>
+                        {Number(service.order_count || 0) > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="text-emerald-300 font-semibold">{service.order_count} Booked</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

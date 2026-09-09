@@ -176,6 +176,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsSuspended(isUserSuspended);
         setSuspensionReason(verificationNotes || u.suspension_reason || (isUserSuspended ? 'Account suspended by administrator' : undefined));
 
+        const cachedAvatar = typeof window !== 'undefined'
+          ? (localStorage.getItem(`LEEMEVENTS_USER_AVATAR_${u.id || currentUser?.id}`) || localStorage.getItem('LEEMEVENTS_USER_AVATAR_current'))
+          : null;
+        const finalAvatar = u.avatar_url || currentUser?.avatar || cachedAvatar || undefined;
+
         const updatedProfile: UserProfile = {
           id: u.id || u.auth_user_id || currentUser?.id || '',
           name: u.full_name || u.name || currentUser?.name || 'Valued Member',
@@ -183,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: mappedRole,
           city: u.city || currentUser?.city,
           phone: u.phone || currentUser?.phone,
-          avatar: u.avatar_url || currentUser?.avatar,
+          avatar: finalAvatar,
           onboarded: u.onboarded ?? currentUser?.onboarded ?? true,
           supplierApproved: isApproved,
           businessName: businessName || currentUser?.businessName,
@@ -216,6 +221,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (storedUser) {
           try {
             existingLocal = JSON.parse(storedUser);
+            const cachedAvatar = typeof window !== 'undefined'
+              ? (localStorage.getItem(`LEEMEVENTS_USER_AVATAR_${existingLocal.id}`) || localStorage.getItem('LEEMEVENTS_USER_AVATAR_current'))
+              : null;
+            if (cachedAvatar && !existingLocal.avatar) {
+              existingLocal.avatar = cachedAvatar;
+            }
             setUser(existingLocal as UserProfile);
             if (existingLocal.isSuspended || existingLocal.is_active === false) {
               setIsSuspended(true);
@@ -236,6 +247,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   const isApproved = suppData.verification_status === 'verified';
                   const isBlocked = suppData.profile?.is_active === false || suppData.verification_status === 'suspended';
 
+                  const cachedAvatar = typeof window !== 'undefined'
+                    ? (localStorage.getItem(`LEEMEVENTS_USER_AVATAR_${suppData.id || existingLocal.id}`) || localStorage.getItem('LEEMEVENTS_USER_AVATAR_current'))
+                    : null;
+                  const finalAvatar = suppData.profile?.avatar_url || existingLocal.avatar || cachedAvatar || undefined;
+
                   setIsSuspended(isBlocked);
                   const mappedUser: UserProfile = {
                     id: suppData.id || existingLocal.id || '',
@@ -244,7 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     role: 'supplier',
                     city: suppData.city || existingLocal.city,
                     phone: suppData.profile?.phone || existingLocal.phone,
-                    avatar: suppData.profile?.avatar_url || existingLocal.avatar,
+                    avatar: finalAvatar,
                     onboarded: true,
                     supplierApproved: isApproved,
                     businessName: suppData.business_name || existingLocal.businessName,
@@ -298,6 +314,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   setIsSuspended(false);
                 }
 
+                const cachedAvatar = typeof window !== 'undefined'
+                  ? (localStorage.getItem(`LEEMEVENTS_USER_AVATAR_${u.id || existingLocal.id}`) || localStorage.getItem('LEEMEVENTS_USER_AVATAR_current'))
+                  : null;
+                const finalAvatar = existingLocal.avatar || cachedAvatar || u.avatar_url || undefined;
+
                 const mappedUser: UserProfile = {
                   id: u.id || u.auth_user_id || existingLocal.id || '',
                   name: existingLocal.name || u.full_name || u.name || 'Valued Member',
@@ -305,7 +326,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   role: userRole,
                   city: existingLocal.city || u.city,
                   phone: existingLocal.phone || u.phone,
-                  avatar: existingLocal.avatar || u.avatar_url,
+                  avatar: finalAvatar,
                   onboarded: u.onboarded ?? existingLocal.onboarded ?? true,
                   supplierApproved: isApproved,
                   businessName: businessName || existingLocal.businessName,
@@ -614,8 +635,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     saveUserLocal(updated);
 
+    if (typeof window !== 'undefined' && updatedData.avatar !== undefined) {
+      if (updatedData.avatar) {
+        try {
+          localStorage.setItem(`LEEMEVENTS_USER_AVATAR_${user.id}`, updatedData.avatar);
+          localStorage.setItem('LEEMEVENTS_USER_AVATAR_current', updatedData.avatar);
+        } catch (storageErr) {
+          console.warn('Avatar localStorage quota note:', storageErr);
+        }
+      } else {
+        localStorage.removeItem(`LEEMEVENTS_USER_AVATAR_${user.id}`);
+        localStorage.removeItem('LEEMEVENTS_USER_AVATAR_current');
+      }
+    }
+
     try {
-      const res = await api.patch('/auth/profile', updatedData);
+      const res = await api.patch('/auth/profile', {
+        ...updatedData,
+        full_name: updatedData.name || user.name,
+        avatar_url: updatedData.avatar !== undefined ? updatedData.avatar : user.avatar,
+      });
       if (res.data) {
         const p = res.data;
         const fullyUpdated: UserProfile = {
@@ -623,7 +662,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: p.full_name || updated.name,
           city: p.city || updated.city,
           phone: p.phone || updated.phone,
-          avatar: p.avatar_url || updated.avatar,
+          avatar: updatedData.avatar || p.avatar_url || updated.avatar,
           businessName: p.business_name || updated.businessName,
         };
         saveUserLocal(fullyUpdated);

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import SupplierLayout from '@/components/dashboard/SupplierLayout';
 import { useAuth } from '@/context/AuthContext';
-import { messagesApi } from '@/lib/services/consumerApi';
+import { messagesApi, supplierBookingsApi } from '@/lib/services/consumerApi';
 import {
   Send,
   MessageSquare,
@@ -17,7 +18,16 @@ import {
   Sparkles,
   Clock,
   CheckCircle2,
-  Tag
+  Tag,
+  XCircle,
+  ArrowRight,
+  ShieldCheck,
+  Building2,
+  DollarSign,
+  AlertCircle,
+  Check,
+  Smile,
+  ChevronRight
 } from 'lucide-react';
 
 interface ConversationThread {
@@ -68,6 +78,10 @@ export default function SupplierMessagesPage() {
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Real Supplier Requests list for linking booking actions inside chat
+  const [supplierRequests, setSupplierRequests] = useState<any[]>([]);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isUserScrolledUpRef = useRef<boolean>(false);
 
@@ -84,13 +98,14 @@ export default function SupplierMessagesPage() {
     }
   };
 
-  // URL Query Param Support for direct navigation: ?hostId=...&hostEmail=...&hostName=...
+  // URL Query Param Support for direct navigation: ?hostId=...&hostEmail=...&hostName=...&bookingId=...
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const hostId = params.get('hostId');
       const hostEmail = params.get('hostEmail');
       const hostName = params.get('hostName');
+      const bookingId = params.get('bookingId');
 
       if (hostId || hostEmail) {
         const directThread: ConversationThread = {
@@ -101,6 +116,7 @@ export default function SupplierMessagesPage() {
           last_message: 'Direct host inquiry consultation',
           last_message_time: new Date().toISOString(),
           last_sender_role: 'supplier',
+          booking_id: bookingId || undefined,
           unread_count: 0,
         };
         setActivePartner(directThread);
@@ -116,27 +132,65 @@ export default function SupplierMessagesPage() {
     }
   }, []);
 
-  // 1. Load All Consumer Inquiries / Conversations
+  // 1. Load All Consumer Inquiries & Synthesize Booking Threads
   const loadConversations = async (autoSelectFirst = false) => {
     if (authLoading || !user?.email) return;
     try {
-      const list = await messagesApi.getConversations();
-      
-      setThreads((prev) => {
-        const currentList = list || [];
-        if (activePartner && !currentList.some((t: ConversationThread) =>
-          (t.partner_id && t.partner_id === activePartner.partner_id) ||
-          (t.partner_email && activePartner.partner_email && t.partner_email.toLowerCase() === activePartner.partner_email.toLowerCase())
-        )) {
-          return [activePartner, ...currentList];
-        }
-        return currentList;
+      const [serverConversations, requestsData] = await Promise.all([
+        messagesApi.getConversations().catch(() => []),
+        supplierBookingsApi.getMyRequests().catch(() => []),
+      ]);
+
+      setSupplierRequests(requestsData || []);
+
+      // Synthesize rich conversation threads for every booking inquiry
+      const bookingThreads: ConversationThread[] = (requestsData || []).map((req: any) => {
+        const creator = req.event?.creator;
+        const hostId = creator?.id || creator?.auth_user_id || req.consumer_id || req.event?.user_id || `host_${req.id}`;
+        const hostEmail = creator?.email || req.consumer_email || 'host@leemevents.com';
+        const hostName = creator?.full_name || req.event?.title || 'Event Host';
+        return {
+          partner_id: hostId,
+          partner_email: hostEmail,
+          partner_name: hostName,
+          partner_role: 'consumer',
+          last_message: req.requirements || `Inquiry for ${req.service?.name || 'Celebration Service'}`,
+          last_message_time: req.created_at || new Date().toISOString(),
+          last_sender_role: 'consumer',
+          booking_id: req.id,
+          service_name: req.service?.name,
+          unread_count: 0,
+        };
       });
 
-      if (list && list.length > 0 && autoSelectFirst && !activePartner) {
-        setActivePartner(list[0]);
-      } else if ((!list || list.length === 0) && !activePartner) {
-        setActivePartner(null);
+      // Merge server conversations with booking threads
+      const combined: ConversationThread[] = [...(serverConversations || [])];
+
+      for (const bt of bookingThreads) {
+        if (!combined.some((c) =>
+          (c.partner_id && c.partner_id === bt.partner_id) ||
+          (c.partner_email && bt.partner_email && c.partner_email.toLowerCase() === bt.partner_email.toLowerCase())
+        )) {
+          combined.push(bt);
+        }
+      }
+
+      // Preserve activePartner if defined in URL or state
+      if (activePartner && !combined.some((t) =>
+        (t.partner_id && t.partner_id === activePartner.partner_id) ||
+        (t.partner_email && activePartner.partner_email && t.partner_email.toLowerCase() === activePartner.partner_email.toLowerCase())
+      )) {
+        combined.unshift(activePartner);
+      }
+
+      setThreads(combined);
+
+      // Auto-select first thread if nothing active is chosen
+      if (combined.length > 0 && (!activePartner || autoSelectFirst)) {
+        const target = activePartner && combined.some((c) => c.partner_id === activePartner.partner_id)
+          ? activePartner
+          : combined[0];
+        setActivePartner(target);
       }
     } catch (err) {
       console.error('Error loading supplier conversations:', err);
@@ -180,7 +234,7 @@ export default function SupplierMessagesPage() {
     }
   }, [activePartner?.partner_id, activePartner?.partner_email]);
 
-  // 5. Silent Background Polling (Every 4 seconds - NEVER jumps or scrolls window)
+  // 5. Silent Background Polling
   useEffect(() => {
     if (!activePartner) return;
     const interval = setInterval(() => {
@@ -190,6 +244,91 @@ export default function SupplierMessagesPage() {
 
     return () => clearInterval(interval);
   }, [activePartner?.partner_id, activePartner?.partner_email]);
+
+  // Find linked booking request for the active host conversation
+  const getActiveBooking = () => {
+    if (!activePartner) return null;
+    return supplierRequests.find((r) => {
+      if (activePartner.booking_id && r.id === activePartner.booking_id) return true;
+      const creatorId = r.event?.creator?.id || r.event?.creator?.auth_user_id || r.consumer_id;
+      const creatorEmail = r.event?.creator?.email || r.consumer_email;
+      return (
+        (creatorId && creatorId === activePartner.partner_id) ||
+        (creatorEmail && activePartner.partner_email && creatorEmail.toLowerCase() === activePartner.partner_email.toLowerCase())
+      );
+    });
+  };
+
+  const getNormalizedStatus = (st?: string) => {
+    const s = (st || 'pending').toLowerCase();
+    if (s === 'completed' || s === 'done') return 'completed';
+    if (s === 'availability_confirmed' || s === 'accepted' || s === 'deposit_paid' || s === 'confirmed' || s === 'contract_sent' || s === 'active') return 'accepted';
+    if (s === 'declined' || s === 'rejected' || s === 'cancelled') return 'rejected';
+    return 'pending';
+  };
+
+  // Actions from inside chat
+  const handleAcceptInquiryFromChat = async (bookingId: string) => {
+    try {
+      setActionLoadingId(bookingId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`LEEMEVENTS_BOOKING_STATUS_${bookingId}`, 'accepted');
+      }
+      await supplierBookingsApi.updateBookingStatus(
+        bookingId,
+        'accepted',
+        'Booking confirmed by supplier via consultation chat.'
+      );
+      // Auto post confirmation message in chat
+      await handleSend(undefined, '✓ Thank you! We have accepted your booking request and confirmed our availability for your celebration date.');
+      await loadConversations(false);
+    } catch (err: any) {
+      alert(`Failed to accept request: ${err?.message || 'Server error'}`);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleMarkDoneFromChat = async (bookingId: string) => {
+    try {
+      setActionLoadingId(bookingId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`LEEMEVENTS_BOOKING_STATUS_${bookingId}`, 'completed');
+      }
+      await supplierBookingsApi.updateBookingStatus(
+        bookingId,
+        'completed',
+        'Event services successfully delivered and completed with luxury standards.'
+      );
+      // Auto post event completion notice in chat
+      await handleSend(undefined, '✨ Celebration services have been delivered & marked as Completed! Thank you for collaborating with us. You can now leave a verified review & rating.');
+      await loadConversations(false);
+    } catch (err: any) {
+      alert(`Failed to mark event as done: ${err?.message || 'Server error'}`);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleDeclineInquiryFromChat = async (bookingId: string) => {
+    try {
+      setActionLoadingId(bookingId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`LEEMEVENTS_BOOKING_STATUS_${bookingId}`, 'rejected');
+      }
+      await supplierBookingsApi.updateBookingStatus(
+        bookingId,
+        'rejected',
+        'Declined due to scheduling constraints.'
+      );
+      await handleSend(undefined, 'Thank you for reaching out. Unfortunately, we are unable to accept this request due to scheduling constraints.');
+      await loadConversations(false);
+    } catch (err: any) {
+      alert(`Failed to decline request: ${err?.message || 'Server error'}`);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   // 6. Send Message Handler
   const handleSend = async (e?: React.FormEvent, customText?: string) => {
@@ -201,24 +340,26 @@ export default function SupplierMessagesPage() {
     setSending(true);
 
     try {
+      const activeBooking = getActiveBooking();
       const newMsg = await messagesApi.sendMessage({
         recipient_id: activePartner.partner_id || activePartner.partner_email,
         recipient_email: activePartner.partner_email || '',
         recipient_name: activePartner.partner_name || 'Client Host',
         content: textToSend.trim(),
-        booking_id: activePartner.booking_id,
-        service_name: activePartner.service_name,
+        booking_id: activePartner.booking_id || activeBooking?.id,
+        service_name: activePartner.service_name || activeBooking?.service?.name,
       });
 
       if (newMsg) {
         isUserScrolledUpRef.current = false;
-        setMessages((prev) => [...prev, newMsg]);
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === newMsg.id || (m.content === newMsg.content && m.sender_email === newMsg.sender_email));
+          return exists ? prev : [...prev, newMsg];
+        });
         setTimeout(scrollToBottom, 30);
-        await loadConversations(false);
       }
     } catch (err: any) {
       console.error('Failed to send supplier message:', err);
-      alert(`Could not send message: ${err?.message || 'Please check backend connection.'}`);
       setInputText(textToSend);
     } finally {
       setSending(false);
@@ -243,6 +384,9 @@ export default function SupplierMessagesPage() {
     }
   };
 
+  const activeBooking = getActiveBooking();
+  const normBookingStatus = activeBooking ? getNormalizedStatus(activeBooking.status) : null;
+
   return (
     <SupplierLayout>
       <div className="space-y-5 max-w-7xl mx-auto pb-8">
@@ -259,7 +403,7 @@ export default function SupplierMessagesPage() {
               Host Messages & Consultation
             </h1>
             <p className="text-xs text-stone-500 max-w-xl mt-0.5">
-              Reply to celebration hosts, discuss requirements, confirm booking dates, and provide direct concierge responses.
+              Reply directly to celebration hosts, discuss arrangements, confirm availability, and mark completed events.
             </p>
           </div>
 
@@ -269,16 +413,17 @@ export default function SupplierMessagesPage() {
                 loadConversations(false);
                 if (activePartner) loadThreadMessages(activePartner, false);
               }}
-              className="p-2.5 rounded-2xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors shadow-soft-sm"
+              className="p-2.5 rounded-2xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors shadow-soft-sm flex items-center gap-1.5 text-xs font-semibold"
               title="Refresh Messages"
             >
               <RefreshCw className="w-4 h-4" />
+              <span>Refresh</span>
             </button>
           </div>
         </div>
 
         {/* MAIN CHAT INTERFACE: 2-COLUMN LUXURY STUDIO */}
-        <div className="bg-white border border-stone-200/90 rounded-3xl overflow-hidden shadow-soft-sm grid grid-cols-1 lg:grid-cols-12 h-[calc(100vh-220px)] min-h-[560px] max-h-[750px]">
+        <div className="bg-white border border-stone-200/90 rounded-3xl overflow-hidden shadow-soft-sm grid grid-cols-1 lg:grid-cols-12 h-[calc(100vh-220px)] min-h-[580px] max-h-[780px]">
           {/* LEFT COLUMN: ACTIVE CONSUMER INQUIRIES (4 COLS) */}
           <div className="lg:col-span-4 border-r border-stone-200/80 bg-stone-50/50 p-4 flex flex-col justify-between h-full overflow-hidden">
             <div className="space-y-3 flex-1 flex flex-col min-h-0">
@@ -317,7 +462,7 @@ export default function SupplierMessagesPage() {
                     <div className="space-y-1">
                       <p className="text-xs font-bold text-charcoal">No host messages yet</p>
                       <p className="text-[11px] text-stone-500 leading-relaxed">
-                        When hosts inquire about your services, their conversations will appear here in real time.
+                        When hosts inquire about your services, their conversations will appear here automatically.
                       </p>
                     </div>
                   </div>
@@ -338,7 +483,7 @@ export default function SupplierMessagesPage() {
                         }}
                         className={`w-full p-3 rounded-2xl text-left transition-all flex items-start gap-3 border ${
                           isSelected
-                            ? 'bg-white border-taupe shadow-soft-sm text-charcoal ring-1 ring-taupe/30'
+                            ? 'bg-white border-taupe shadow-soft-sm text-charcoal ring-2 ring-taupe/30'
                             : 'bg-white/80 border-stone-200/70 hover:bg-white hover:border-stone-300 text-stone-700'
                         }`}
                       >
@@ -364,12 +509,6 @@ export default function SupplierMessagesPage() {
                           <p className="text-xs text-stone-500 truncate mt-0.5">
                             {thread.last_message}
                           </p>
-
-                          {thread.unread_count > 0 && (
-                            <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500 text-white shadow-sm">
-                              {thread.unread_count} new
-                            </span>
-                          )}
                         </div>
                       </button>
                     );
@@ -392,36 +531,139 @@ export default function SupplierMessagesPage() {
           </div>
 
           {/* RIGHT COLUMN: ACTIVE CONVERSATION CHAT WINDOW (8 COLS) */}
-          <div className="lg:col-span-8 flex flex-col justify-between p-4 sm:p-6 bg-white h-full overflow-hidden">
+          <div className="lg:col-span-8 flex flex-col justify-between p-4 sm:p-5 bg-white h-full overflow-hidden">
             {activePartner ? (
               <>
                 {/* Chat Header */}
-                <div className="pb-3 border-b border-stone-200 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-3">
+                <div className="pb-3 border-b border-stone-200 flex items-center justify-between shrink-0 gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-2xl bg-sand-200 text-taupe flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
                       <User className="w-4 h-4" />
                     </div>
-                    <div>
-                      <h3 className="text-sm sm:text-base font-bold text-charcoal tracking-tight flex items-center gap-2">
-                        <span>{activePartner.partner_name}</span>
-                        <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-sand-200 text-taupe">
+                    <div className="min-w-0">
+                      <h3 className="text-sm sm:text-base font-bold text-charcoal tracking-tight flex items-center gap-2 truncate">
+                        <span className="truncate">{activePartner.partner_name}</span>
+                        <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-sand-200 text-taupe shrink-0">
                           Host
                         </span>
                       </h3>
-                      <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5">
-                        <Mail className="w-3 h-3 text-stone-400" />
-                        <span className="font-medium">{activePartner.partner_email || 'Direct Channel'}</span>
+                      <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5 truncate">
+                        <Mail className="w-3 h-3 text-stone-400 shrink-0" />
+                        <span className="font-medium truncate">{activePartner.partner_email || 'Direct Channel'}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 rounded-full text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>Host Channel</span>
-                    </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                      href="/dashboard/supplier/requests"
+                      className="px-3 py-1.5 rounded-xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                    >
+                      <Building2 className="w-3.5 h-3.5 text-taupe" />
+                      <span className="hidden sm:inline">All Requests</span>
+                    </Link>
                   </div>
                 </div>
+
+                {/* ACTIVE INQUIRY / BOOKING CONTROL STRIP */}
+                {activeBooking && (
+                  <div className="mt-2.5 p-3.5 rounded-2xl bg-stone-50 border border-stone-200/90 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 shadow-soft-sm animate-in fade-in duration-200">
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-charcoal truncate">
+                          {activeBooking.event?.title || activeBooking.event?.name || 'Celebration Event'}
+                        </span>
+                        <span className="text-stone-300">•</span>
+                        <span className="text-[11px] text-stone-500 font-medium">
+                          {activeBooking.service?.name || 'Custom Package'}
+                        </span>
+                        {normBookingStatus === 'pending' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>Pending Review</span>
+                          </span>
+                        )}
+                        {normBookingStatus === 'accepted' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Accepted & Confirmed</span>
+                          </span>
+                        )}
+                        {normBookingStatus === 'completed' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-teal-600" />
+                            <span>Event Completed ✓</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 text-[11px] text-stone-500">
+                        <span className="flex items-center gap-1 font-mono">
+                          <Calendar className="w-3 h-3 text-taupe" />
+                          {activeBooking.requested_date || activeBooking.event?.event_date || 'Date TBD'}
+                        </span>
+                        <span>•</span>
+                        <span className="font-bold text-charcoal font-mono">
+                          €{Number(activeBooking.quote_amount || activeBooking.service?.base_price || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actionable buttons */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {normBookingStatus === 'pending' && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={actionLoadingId === activeBooking.id}
+                            onClick={() => handleDeclineInquiryFromChat(activeBooking.id)}
+                            className="px-3 py-1.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-semibold transition-colors flex items-center gap-1"
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            <span>Decline</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={actionLoadingId === activeBooking.id}
+                            onClick={() => handleAcceptInquiryFromChat(activeBooking.id)}
+                            className="px-4 py-1.5 rounded-xl bg-charcoal hover:bg-taupe text-white text-xs font-bold transition-all shadow-soft-sm flex items-center gap-1.5"
+                          >
+                            {actionLoadingId === activeBooking.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            )}
+                            <span>Accept Request</span>
+                          </button>
+                        </>
+                      )}
+
+                      {normBookingStatus === 'accepted' && (
+                        <button
+                          type="button"
+                          disabled={actionLoadingId === activeBooking.id}
+                          onClick={() => handleMarkDoneFromChat(activeBooking.id)}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 hover:scale-[1.02] ring-2 ring-emerald-400/30"
+                          title="Click once event services are delivered. Unlocks host review & rating."
+                        >
+                          {actionLoadingId === activeBooking.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-3.5 h-3.5" />
+                          )}
+                          <span>✓ Mark as Done (Completed)</span>
+                        </button>
+                      )}
+
+                      {normBookingStatus === 'completed' && (
+                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Host Review Unlocked</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Message Stream */}
                 <div
@@ -435,14 +677,29 @@ export default function SupplierMessagesPage() {
                       <p className="text-xs text-stone-400">Loading messages...</p>
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="py-12 text-center space-y-2 bg-stone-50/50 border border-stone-100 rounded-2xl p-6">
-                      <Sparkles className="w-6 h-6 text-taupe mx-auto" />
-                      <p className="text-xs font-bold text-charcoal">
-                        Direct conversation with {activePartner.partner_name}
-                      </p>
-                      <p className="text-[11px] text-stone-500 max-w-sm mx-auto">
-                        Reply directly to the client below to discuss setup options, date availability, and bespoke arrangements.
-                      </p>
+                    <div className="py-10 text-center space-y-3 bg-stone-50/70 border border-stone-200/80 rounded-2xl p-6">
+                      <Sparkles className="w-8 h-8 text-taupe mx-auto" />
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-charcoal">
+                          Start Consultation with {activePartner.partner_name}
+                        </h4>
+                        <p className="text-xs text-stone-500 max-w-md mx-auto">
+                          Send a direct message below to discuss pricing, arrangements, or date confirmation. Click any quick greeting to start immediately:
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap justify-center gap-2 pt-2">
+                        {QUICK_REPLIES.map((rep, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleSend(undefined, rep)}
+                            className="text-left px-3 py-1.5 rounded-xl bg-white border border-stone-200 hover:border-taupe hover:bg-stone-50 text-xs text-stone-700 transition-all shadow-xs"
+                          >
+                            {rep}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     messages.map((m) => {
@@ -484,7 +741,7 @@ export default function SupplierMessagesPage() {
                 {/* Quick Reply Presets */}
                 <div className="pt-2 pb-1 flex items-center gap-1.5 overflow-x-auto shrink-0">
                   <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider shrink-0 mr-1">
-                    Quick Templates:
+                    Quick Reply:
                   </span>
                   {QUICK_REPLIES.map((rep, idx) => (
                     <button
@@ -518,23 +775,42 @@ export default function SupplierMessagesPage() {
                     ) : (
                       <>
                         <Send className="w-4 h-4 text-white" />
-                        <span>Reply</span>
+                        <span>Send</span>
                       </>
                     )}
                   </button>
                 </form>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 p-8">
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-5 p-8">
                 <div className="w-16 h-16 rounded-2xl bg-sand-100 text-taupe flex items-center justify-center shadow-soft-sm">
                   <MessageSquare className="w-8 h-8 stroke-[1.5]" />
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-charcoal">Select an Inquiry to Respond</h3>
-                  <p className="text-xs text-stone-500 max-w-sm">
-                    Select any client consultation thread from the list on the left, or click &quot;Chat with Host&quot; from incoming booking requests.
+                <div className="space-y-1.5 max-w-md">
+                  <h3 className="text-lg font-bold text-charcoal">Select or Open a Client Consultation</h3>
+                  <p className="text-xs text-stone-500">
+                    Select a client conversation from the left queue or choose one of your active booking inquiries below to chat directly:
                   </p>
                 </div>
+
+                {threads.length > 0 && (
+                  <div className="w-full max-w-sm space-y-2 pt-2">
+                    {threads.slice(0, 3).map((t) => (
+                      <button
+                        key={t.partner_id || t.partner_email}
+                        type="button"
+                        onClick={() => setActivePartner(t)}
+                        className="w-full p-3 rounded-2xl bg-[#FAF8F5] hover:bg-stone-100 border border-stone-200 text-left flex items-center justify-between transition-all"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <User className="w-4 h-4 text-taupe" />
+                          <span className="text-xs font-bold text-charcoal">{t.partner_name}</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-stone-400" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

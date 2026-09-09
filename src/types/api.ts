@@ -77,6 +77,7 @@ export interface SupplierService {
   image?: string;
   rating_avg?: number;
   review_count?: number;
+  order_count?: number;
   supplier?: any;
   created_at?: string;
   updated_at?: string;
@@ -132,6 +133,8 @@ export interface SupplierProfile {
   category_id?: string;
   tagline?: string;
   bio?: string;
+  years_in_business?: string | number;
+  events_executed?: number;
   city?: string;
   country?: string;
   address?: string;

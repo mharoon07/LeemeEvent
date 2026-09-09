@@ -146,7 +146,7 @@ export default function HostLayout({ children }: HostLayoutProps) {
   const displayInitial = displayName.charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#F8F7F4] text-charcoal flex font-sans selection:bg-taupe selection:text-sand">
+    <div className="min-h-screen bg-[#F8F7F4] text-charcoal flex font-sans selection:bg-taupe selection:text-sand w-full overflow-x-hidden">
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden lg:flex w-64 shrink-0 bg-white border-r border-stone-200/90 flex-col justify-between p-5 fixed top-0 bottom-0 left-0 z-40 shadow-[1px_0_16px_rgba(0,0,0,0.02)]">
         <div className="space-y-5">
@@ -337,8 +337,8 @@ export default function HostLayout({ children }: HostLayoutProps) {
       )}
 
       {/* MAIN CONTENT COLUMN */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
-        <header className="sticky top-0 z-30 h-16 bg-white/85 backdrop-blur-md border-b border-stone-200/80 px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-64 w-full">
+        <header className="sticky top-0 z-30 h-16 w-full bg-white/85 backdrop-blur-md border-b border-stone-200/80 px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setMobileSidebarOpen(true)}

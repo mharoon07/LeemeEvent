@@ -29,8 +29,12 @@ import {
   Package,
   AlertTriangle,
   X,
-  Loader2
+  Loader2,
+  Star,
+  Briefcase
 } from 'lucide-react';
+import { reviewsApi } from '@/lib/services/consumerApi';
+import SupplierPortfolioModal from '@/components/SupplierPortfolioModal';
 
 export default function HostRequestsPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -38,16 +42,42 @@ export default function HostRequestsPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Supplier Portfolio Modal State
+  const [portfolioModalSupplier, setPortfolioModalSupplier] = useState<any | null>(null);
+  const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState<boolean>(false);
+
   // Cancel Modal State
   const [cancelModalBooking, setCancelModalBooking] = useState<any | null>(null);
   const [cancelReason, setCancelReason] = useState<string>('');
   const [cancelling, setCancelling] = useState<boolean>(false);
 
+  // Review Modal State
+  const [reviewModalBooking, setReviewModalBooking] = useState<any | null>(null);
+  const [ratingPunctuality, setRatingPunctuality] = useState<number>(5);
+  const [ratingQuality, setRatingQuality] = useState<number>(5);
+  const [ratingCommunication, setRatingCommunication] = useState<number>(5);
+  const [ratingValue, setRatingValue] = useState<number>(5);
+  const [reviewComment, setReviewComment] = useState<string>('');
+  const [reviewSubmitting, setReviewSubmitting] = useState<boolean>(false);
+  const [reviewSuccessMsg, setReviewSuccessMsg] = useState<string | null>(null);
+
   const loadRequests = async () => {
     try {
       setLoading(true);
       const data = await bookingsApi.getMyBookings();
-      setRequests(data || []);
+      const enhanced = (data || []).map((r: any) => {
+        if (typeof window !== 'undefined') {
+          const cachedStatus = localStorage.getItem(`LEEMEVENTS_BOOKING_STATUS_${r.id}`);
+          const cachedReviewed = localStorage.getItem(`LEEMEVENTS_BOOKING_REVIEWED_${r.id}`);
+          return {
+            ...r,
+            status: cachedStatus || r.status,
+            is_reviewed: cachedReviewed ? true : r.is_reviewed,
+          };
+        }
+        return r;
+      });
+      setRequests(enhanced);
     } catch (err) {
       console.error('Failed to load host booking requests', err);
     } finally {
@@ -86,8 +116,69 @@ export default function HostRequestsPage() {
     }
   };
 
+  const handleOpenReviewModal = (booking: any) => {
+    setReviewModalBooking(booking);
+    setRatingPunctuality(5);
+    setRatingQuality(5);
+    setRatingCommunication(5);
+    setRatingValue(5);
+    setReviewComment('');
+    setReviewSuccessMsg(null);
+  };
+
+  const handleConfirmReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewModalBooking) return;
+    if (!reviewComment.trim()) {
+      alert('Please provide your review feedback comment.');
+      return;
+    }
+
+    try {
+      setReviewSubmitting(true);
+      const supplierId =
+        reviewModalBooking.supplier_id ||
+        reviewModalBooking.supplier?.id ||
+        reviewModalBooking.service?.supplier_id;
+
+      await reviewsApi.submitReview({
+        booking_id: reviewModalBooking.id,
+        supplier_id: supplierId,
+        service_id: reviewModalBooking.service_id || reviewModalBooking.service?.id,
+        rating_punctuality: ratingPunctuality,
+        rating_quality: ratingQuality,
+        rating_communication: ratingCommunication,
+        rating_value: ratingValue,
+        comment: reviewComment.trim(),
+      });
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`LEEMEVENTS_BOOKING_REVIEWED_${reviewModalBooking.id}`, 'true');
+        localStorage.setItem(`LEEMEVENTS_BOOKING_STATUS_${reviewModalBooking.id}`, 'completed');
+      }
+
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === reviewModalBooking.id ? { ...r, is_reviewed: true, status: 'completed' } : r
+        )
+      );
+
+      setReviewSuccessMsg('Your review and rating have been published successfully! Thank you for supporting our verified specialist.');
+      setTimeout(() => {
+        setReviewModalBooking(null);
+        setReviewSuccessMsg(null);
+        loadRequests();
+      }, 1800);
+    } catch (err: any) {
+      alert(`Failed to submit review: ${err?.message || 'Server error'}`);
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
   const getNormalizedStatus = (st?: string) => {
     const s = (st || 'pending').toLowerCase();
+    if (s === 'completed' || s === 'done') return 'Completed';
     if (s === 'availability_confirmed' || s === 'accepted') return 'Accepted';
     if (s === 'declined' || s === 'rejected') return 'Declined';
     if (s === 'deposit_paid' || s === 'confirmed') return 'Deposit Paid';
@@ -98,6 +189,8 @@ export default function HostRequestsPage() {
 
   const getStatusBadge = (normalized: string) => {
     switch (normalized) {
+      case 'Completed':
+        return 'bg-teal-100 text-teal-800 border-teal-300';
       case 'Accepted':
         return 'bg-emerald-100 text-emerald-800 border-emerald-300';
       case 'Contract Sent':
@@ -146,7 +239,7 @@ export default function HostRequestsPage() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <div className="flex items-center gap-2 overflow-x-auto">
-              {['All', 'Pending', 'Accepted', 'Deposit Paid', 'Declined', 'Cancelled'].map((st) => (
+              {['All', 'Pending', 'Accepted', 'Completed', 'Deposit Paid', 'Declined', 'Cancelled'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setFilterStatus(st)}
@@ -328,13 +421,25 @@ export default function HostRequestsPage() {
                       )}
 
                       {normStatus === 'Accepted' && (
-                        <Link
-                          href="/dashboard/host/cart"
-                          className="px-5 py-2.5 rounded-xl bg-charcoal hover:bg-taupe text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-soft-sm"
-                        >
-                          <CreditCard className="w-3.5 h-3.5 text-sand" />
-                          <span>Pay 20% Deposit (Escrow)</span>
-                        </Link>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            href="/dashboard/host/cart"
+                            className="px-4 py-2 rounded-xl bg-charcoal hover:bg-taupe text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-soft-sm"
+                          >
+                            <CreditCard className="w-3.5 h-3.5 text-sand" />
+                            <span>Pay 20% Deposit</span>
+                          </Link>
+
+                          {!req.is_reviewed && (
+                            <button
+                              onClick={() => handleOpenReviewModal(req)}
+                              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md hover:scale-[1.02]"
+                            >
+                              <Star className="w-3.5 h-3.5 fill-white" />
+                              <span>Give Review & Rating ★</span>
+                            </button>
+                          )}
+                        </div>
                       )}
 
                       {normStatus === 'Contract Sent' && (
@@ -346,6 +451,43 @@ export default function HostRequestsPage() {
                           <span>Review & Sign Contract</span>
                         </Link>
                       )}
+
+                      {normStatus === 'Completed' && (
+                        <>
+                          {req.is_reviewed ? (
+                            <span className="px-4 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-1.5 shadow-soft-sm">
+                              <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                              <span>Review Submitted ✓</span>
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenReviewModal(req)}
+                              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-2 transition-all shadow-md hover:scale-[1.02] ring-4 ring-amber-400/20"
+                            >
+                              <Star className="w-3.5 h-3.5 fill-white" />
+                              <span>Give Review & Rating ★</span>
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const s = req.supplier || req.service?.supplier;
+                          setPortfolioModalSupplier(s || {
+                            id: req.supplier_id || req.service?.supplier_id,
+                            business_name: supplierName,
+                            city: supplierCity,
+                            category: supplierCategory,
+                          });
+                          setIsPortfolioModalOpen(true);
+                        }}
+                        className="btn-secondary px-3.5 py-2 text-xs flex items-center gap-1.5 hover:bg-stone-100 transition-colors"
+                      >
+                        <Briefcase className="w-3.5 h-3.5 text-taupe" />
+                        <span>Supplier Portfolio</span>
+                      </button>
 
                       <Link
                         href={`/dashboard/host/messages?supplierId=${req.supplier_id || req.supplier?.id || req.service?.supplier_id || ''}&supplierEmail=${encodeURIComponent(req.supplier?.profile?.email || req.supplier?.email || req.service?.supplier?.profile?.email || req.service?.supplier?.email || req.supplier_email || '')}&supplierName=${encodeURIComponent(req.supplier?.business_name || req.supplier?.profile?.full_name || req.service?.supplier?.business_name || req.service?.supplier?.profile?.full_name || req.supplier?.name || 'Specialist Partner')}`}
@@ -437,6 +579,158 @@ export default function HostRequestsPage() {
             </div>
           </div>
         )}
+
+        {/* GIVE REVIEW & RATING MODAL */}
+        {reviewModalBooking && (
+          <div
+            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !reviewSubmitting) setReviewModalBooking(null);
+            }}
+          >
+            <div className="bg-white rounded-3xl max-w-lg w-full border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+              <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                    <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-charcoal text-base">Write Verified Review</h3>
+                    <span className="text-[11px] text-stone-500">
+                      Rate {reviewModalBooking.supplier?.business_name || reviewModalBooking.service?.name || 'Supplier'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => !reviewSubmitting && setReviewModalBooking(null)}
+                  className="p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-200/60 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {reviewSuccessMsg ? (
+                <div className="p-8 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-lg font-bold text-charcoal">Review Published!</h4>
+                  <p className="text-xs text-stone-600 max-w-sm mx-auto leading-relaxed">
+                    {reviewSuccessMsg}
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleConfirmReview} className="p-6 space-y-5">
+                  {/* Overall Average Calculation Preview */}
+                  <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-amber-800 uppercase font-bold tracking-wider block">
+                        Overall Rating Score
+                      </span>
+                      <span className="text-xs text-amber-900 font-medium">
+                        Calculated across all 4 key service criteria
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white px-3.5 py-1.5 rounded-xl border border-amber-300 shadow-soft-sm">
+                      <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                      <span className="text-sm font-bold text-charcoal font-mono">
+                        {((ratingPunctuality + ratingQuality + ratingCommunication + ratingValue) / 4).toFixed(2)}
+                      </span>
+                      <span className="text-[10px] text-stone-400 font-bold">/ 5.0</span>
+                    </div>
+                  </div>
+
+                  {/* 4 Criteria Star Sliders/Pickers */}
+                  <div className="space-y-3.5">
+                    {[
+                      { label: 'Punctuality & Timeliness', value: ratingPunctuality, setter: setRatingPunctuality },
+                      { label: 'Quality of Service & Presentation', value: ratingQuality, setter: setRatingQuality },
+                      { label: 'Communication & Responsiveness', value: ratingCommunication, setter: setRatingCommunication },
+                      { label: 'Value for Money & Pricing', value: ratingValue, setter: setRatingValue },
+                    ].map((crit) => (
+                      <div key={crit.label} className="flex items-center justify-between p-2.5 rounded-xl bg-stone-50 border border-stone-200/70">
+                        <span className="text-xs font-semibold text-charcoal">{crit.label}</span>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => crit.setter(star)}
+                              className="p-1 hover:scale-125 transition-transform"
+                            >
+                              <Star
+                                className={`w-4 h-4 ${
+                                  star <= crit.value
+                                    ? 'fill-amber-400 text-amber-400'
+                                    : 'text-stone-300'
+                                }`}
+                              />
+                            </button>
+                          ))}
+                          <span className="text-xs font-bold text-charcoal font-mono ml-1.5 w-4 text-center">
+                            {crit.value}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Mandatory Feedback */}
+                  <div>
+                    <label className="block text-xs font-bold text-charcoal mb-1.5">
+                      Written Feedback & Experience * (Mandatory)
+                    </label>
+                    <textarea
+                      rows={4}
+                      required
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Describe your experience with this supplier, quality of delivery, setup, and why you would recommend them..."
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs focus:outline-none focus:border-taupe resize-none"
+                    />
+                  </div>
+
+                  <div className="pt-3 flex items-center justify-end gap-3 border-t border-stone-100">
+                    <button
+                      type="button"
+                      disabled={reviewSubmitting}
+                      onClick={() => setReviewModalBooking(null)}
+                      className="px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={reviewSubmitting}
+                      className="px-6 py-2.5 rounded-xl bg-charcoal hover:bg-taupe text-white text-xs font-bold transition-all flex items-center gap-2 shadow-soft-sm disabled:opacity-50"
+                    >
+                      {reviewSubmitting ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Publishing Review...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Star className="w-3.5 h-3.5 fill-sand text-sand" />
+                          <span>Submit Verified Review</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* SUPPLIER PORTFOLIO MODAL */}
+        <SupplierPortfolioModal
+          isOpen={isPortfolioModalOpen}
+          onClose={() => setIsPortfolioModalOpen(false)}
+          supplierId={portfolioModalSupplier?.id || portfolioModalSupplier?.supplier_id}
+          initialSupplier={portfolioModalSupplier}
+        />
       </div>
     </HostLayout>
   );
