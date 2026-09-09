@@ -729,7 +729,7 @@ export const mediaApi = {
 // ==========================================
 // 10. REAL-TIME CONSUMER <-> SUPPLIER MESSAGES API
 // ==========================================
-function getThreadStorageKey(id1?: string, email1?: string, id2?: string, email2?: string): string {
+export function getThreadStorageKey(id1?: string, email1?: string, id2?: string, email2?: string): string {
   const p1 = (email1 || id1 || '').toLowerCase().trim();
   const p2 = (email2 || id2 || '').toLowerCase().trim();
   return `LEEMEVENTS_CHAT_THREAD_${[p1, p2].sort().join('__')}`;
@@ -757,10 +757,10 @@ export const messagesApi = {
     const myEmail = currentUser?.email || '';
 
     let localMsgs: any[] = [];
+    const storageKey = getThreadStorageKey(myId, myEmail, partnerId, partnerEmail);
     if (typeof window !== 'undefined') {
-      const key = getThreadStorageKey(myId, myEmail, partnerId, partnerEmail);
       try {
-        localMsgs = JSON.parse(localStorage.getItem(key) || '[]');
+        localMsgs = JSON.parse(localStorage.getItem(storageKey) || '[]');
       } catch {}
     }
 
@@ -776,6 +776,11 @@ export const messagesApi = {
           }
         }
         merged.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(merged));
+          } catch {}
+        }
         return merged;
       }
     } catch (err) {
@@ -821,12 +826,14 @@ export const messagesApi = {
       created_at: new Date().toISOString(),
     };
 
+    const storageKey = getThreadStorageKey(myId, myEmail, payload.recipient_id, payload.recipient_email);
     if (typeof window !== 'undefined') {
-      const key = getThreadStorageKey(myId, myEmail, payload.recipient_id, payload.recipient_email);
       try {
-        const existing = JSON.parse(localStorage.getItem(key) || '[]');
-        existing.push(localMsg);
-        localStorage.setItem(key, JSON.stringify(existing));
+        const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        if (!existing.some((m: any) => m.content === localMsg.content && Math.abs(new Date(m.created_at).getTime() - new Date(localMsg.created_at).getTime()) < 1000)) {
+          existing.push(localMsg);
+          localStorage.setItem(storageKey, JSON.stringify(existing));
+        }
       } catch {}
     }
 
@@ -834,10 +841,17 @@ export const messagesApi = {
       const res = await api.post('/messages/send', payload);
       const serverMsg = res.data?.data || res.data;
       if (serverMsg && serverMsg.id) {
+        if (typeof window !== 'undefined') {
+          try {
+            const current = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const updated = current.map((m: any) => m.id === localMsg.id ? serverMsg : m);
+            localStorage.setItem(storageKey, JSON.stringify(updated));
+          } catch {}
+        }
         return serverMsg;
       }
     } catch (err) {
-      console.warn('Backend message sync note (delivered via instant buffer):', err);
+      console.warn('Backend message sync note (buffered locally):', err);
     }
 
     return localMsg;

@@ -121,7 +121,6 @@ export default function HostMessagesPage() {
   const loadConversations = async (autoSelectFirst = false) => {
     if (authLoading || !user?.email) return;
     try {
-      setLoadingThreads(true);
       const [serverConversations, bookingsData] = await Promise.all([
         messagesApi.getConversations().catch(() => []),
         bookingsApi.getMyBookings().catch(() => []),
@@ -164,14 +163,18 @@ export default function HostMessagesPage() {
         combined.unshift(activePartner);
       }
 
-      setThreads(combined);
+      setThreads((prev) => {
+        const prevKey = prev.map((t) => `${t.partner_id}_${t.partner_email}_${t.last_message}`).join('|');
+        const newKey = combined.map((t) => `${t.partner_id}_${t.partner_email}_${t.last_message}`).join('|');
+        return prevKey === newKey ? prev : combined;
+      });
 
-      if (combined.length > 0 && (!activePartner || autoSelectFirst)) {
-        const target = activePartner && combined.some((c) => c.partner_id === activePartner.partner_id)
-          ? activePartner
-          : combined[0];
-        setActivePartner(target);
-      }
+      setActivePartner((currentActive) => {
+        if (!currentActive && combined.length > 0) {
+          return combined[0];
+        }
+        return currentActive;
+      });
     } catch (err) {
       console.error('Error loading conversations:', err);
     } finally {
@@ -179,15 +182,39 @@ export default function HostMessagesPage() {
     }
   };
 
-  // 3. Load Thread Messages
-  const loadThreadMessages = async (partner: ConversationThread, forceScroll = false) => {
+  // 3. Load Thread Messages (Silent with instant cache fallback)
+  const loadThreadMessages = async (partner: ConversationThread, isInitial = false) => {
     if (!partner || (!partner.partner_id && !partner.partner_email)) return;
     try {
-      const msgs = await messagesApi.getThread(partner.partner_id, partner.partner_email);
-      setMessages(msgs || []);
-      if (forceScroll || !isUserScrolledUpRef.current) {
-        setTimeout(scrollToBottom, 30);
+      if (isInitial) {
+        const myId = user?.id || '';
+        const myEmail = user?.email || '';
+        const storageKey = `LEEMEVENTS_CHAT_THREAD_${[(myEmail || myId).toLowerCase(), (partner.partner_email || partner.partner_id).toLowerCase()].sort().join('__')}`;
+        if (typeof window !== 'undefined') {
+          try {
+            const cached = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            if (Array.isArray(cached) && cached.length > 0) {
+              setMessages(cached);
+              setLoadingMessages(false);
+              setTimeout(scrollToBottom, 20);
+            } else {
+              setLoadingMessages(true);
+            }
+          } catch {
+            setLoadingMessages(true);
+          }
+        }
       }
+
+      const msgs = await messagesApi.getThread(partner.partner_id, partner.partner_email);
+      setMessages((prev) => {
+        const isSame = prev.length === msgs.length && prev.every((m, i) => m.id === msgs[i]?.id && m.content === msgs[i]?.content);
+        if (isSame) return prev;
+        if (!isUserScrolledUpRef.current) {
+          setTimeout(scrollToBottom, 20);
+        }
+        return msgs || [];
+      });
     } catch (err) {
       console.error('Error loading thread messages:', err);
     } finally {
@@ -198,7 +225,6 @@ export default function HostMessagesPage() {
   // 4. Initial Load
   useEffect(() => {
     if (!authLoading && user?.email) {
-      setLoadingThreads(true);
       loadConversations(true);
     }
   }, [user?.id, user?.email, authLoading]);
@@ -206,11 +232,11 @@ export default function HostMessagesPage() {
   // 5. Active Partner Changed
   useEffect(() => {
     if (activePartner && (activePartner.partner_id || activePartner.partner_email)) {
-      setLoadingMessages(true);
       isUserScrolledUpRef.current = false;
       loadThreadMessages(activePartner, true);
     } else {
       setMessages([]);
+      setLoadingMessages(false);
     }
   }, [activePartner?.partner_id, activePartner?.partner_email]);
 
@@ -220,22 +246,49 @@ export default function HostMessagesPage() {
     const interval = setInterval(() => {
       loadThreadMessages(activePartner, false);
       loadConversations(false);
-    }, 4000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [activePartner?.partner_id, activePartner?.partner_email]);
 
-  // 7. Send Message
+  // 7. INSTANT 0ms Optimistic Send Message
   const handleSend = async (e?: React.FormEvent, customText?: string) => {
     if (e) e.preventDefault();
     const textToSend = customText || inputText;
-    if (!textToSend.trim() || !activePartner || sending) return;
+    if (!textToSend.trim() || !activePartner) return;
 
     setInputText('');
-    setSending(true);
 
+    const myId = user?.id || 'host_user';
+    const myEmail = user?.email || 'host@leemevents.com';
+    const myName = user?.name || 'Valued Host';
+
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      sender_id: myId,
+      sender_name: myName,
+      sender_email: myEmail,
+      sender_role: 'consumer',
+      recipient_id: activePartner.partner_id || activePartner.partner_email,
+      recipient_name: activePartner.partner_name || 'Specialist Partner',
+      recipient_email: activePartner.partner_email || '',
+      recipient_role: 'supplier',
+      content: textToSend.trim(),
+      booking_id: activePartner.booking_id,
+      service_name: activePartner.service_name,
+      is_read: false,
+      created_at: new Date().toISOString(),
+    };
+
+    // INSTANT UI UPDATE (0ms)
+    isUserScrolledUpRef.current = false;
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setTimeout(scrollToBottom, 10);
+
+    // Background Async Delivery
     try {
-      const newMsg = await messagesApi.sendMessage({
+      const serverMsg = await messagesApi.sendMessage({
         recipient_id: activePartner.partner_id || activePartner.partner_email,
         recipient_email: activePartner.partner_email || '',
         recipient_name: activePartner.partner_name || 'Specialist Partner',
@@ -244,19 +297,13 @@ export default function HostMessagesPage() {
         service_name: activePartner.service_name,
       });
 
-      if (newMsg) {
-        isUserScrolledUpRef.current = false;
-        setMessages((prev) => {
-          const exists = prev.some((m) => m.id === newMsg.id || (m.content === newMsg.content && m.sender_email === newMsg.sender_email));
-          return exists ? prev : [...prev, newMsg];
-        });
-        setTimeout(scrollToBottom, 30);
+      if (serverMsg && serverMsg.id) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...serverMsg, is_read: false } : m))
+        );
       }
     } catch (err: any) {
-      console.error('Failed to send message:', err);
-      setInputText(textToSend);
-    } finally {
-      setSending(false);
+      console.warn('Backend message sync fallback:', err);
     }
   };
 
