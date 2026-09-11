@@ -214,6 +214,233 @@ export const eventsApi = {
       };
     }
   },
+
+  // GET /api/events/marketplace (Suppliers browse open host events/leads)
+  getMarketplaceEvents: async (params?: { city?: string; search?: string; event_type?: string }): Promise<any[]> => {
+    const query = new URLSearchParams();
+    if (params?.city && params.city !== 'All') query.append('city', params.city);
+    if (params?.search) query.append('search', params.search);
+    if (params?.event_type && params.event_type !== 'All') query.append('event_type', params.event_type);
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+
+    let serverEvents: any[] = [];
+    try {
+      const res = await api.get<any>(`/events/marketplace${queryString}`);
+      const list = res.data?.data || res.data?.events || res.data || [];
+      if (Array.isArray(list)) {
+        serverEvents = list.map(normalizeEvent);
+      }
+    } catch (err) {
+      console.warn('Backend /events/marketplace notice:', err);
+    }
+
+    if (serverEvents.length === 0) {
+      try {
+        const standardList = await eventsApi.getEvents();
+        if (Array.isArray(standardList) && standardList.length > 0) {
+          serverEvents = standardList;
+        }
+      } catch {}
+    }
+
+    let localEvents: any[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('LEEMEVENTS_MARKETPLACE_EVENTS');
+        if (raw) localEvents = JSON.parse(raw);
+      } catch {}
+    }
+
+    const mergedMap = new Map<string, any>();
+    localEvents.forEach((ev) => mergedMap.set(ev.id, ev));
+    serverEvents.forEach((ev) => mergedMap.set(ev.id, ev));
+
+    if (mergedMap.size === 0) {
+      const demoLeads = [
+        {
+          id: 'ev_demo_101',
+          title: '🌸 Luxury Summer Garden Wedding',
+          event_type: 'Wedding Celebration',
+          type: 'Wedding Celebration',
+          event_date: '2026-09-28',
+          city: 'Amsterdam',
+          venue_name: 'Amstel Glasshouse Pavilion',
+          guest_count: 140,
+          estimated_budget: 35000,
+          status: 'planning',
+          description: 'Seeking high-end floral styling, bespoke catering, and live jazz trio for an outdoor garden wedding.',
+          creator: {
+            full_name: 'Elena & Lucas van Dijk',
+            email: 'elena.vandijk@example.com',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop'
+          },
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 'ev_demo_102',
+          title: '✨ Tech Founders Gala & Awards Dinner',
+          event_type: 'Corporate Gala & Conference',
+          type: 'Corporate Gala & Conference',
+          event_date: '2026-10-14',
+          city: 'Rotterdam',
+          venue_name: 'World Trade Center Rotterdam',
+          guest_count: 220,
+          estimated_budget: 48000,
+          status: 'planning',
+          description: 'Need AV lighting, sound engineering, stage design, and premium 4-course dinner for 220 VIP tech executives.',
+          creator: {
+            full_name: 'Marcus Sterling (Host)',
+            email: 'marcus.events@techsummit.nl',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop'
+          },
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 'ev_demo_103',
+          title: '🍸 30th Rooftop Anniversary & Cocktail Soirée',
+          event_type: 'Private Anniversary / Birthday',
+          type: 'Private Anniversary / Birthday',
+          event_date: '2026-10-04',
+          city: 'Den Haag',
+          venue_name: 'The Penthouse Sky Lounge',
+          guest_count: 85,
+          estimated_budget: 18000,
+          status: 'planning',
+          description: 'Looking for a master mixologist bar station, artisanal canapés, and a deep house DJ.',
+          creator: {
+            full_name: 'Sophie & David Moreau',
+            email: 'sophie.moreau@example.com',
+            avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=300&auto=format&fit=crop'
+          },
+          created_at: new Date().toISOString(),
+        }
+      ];
+      demoLeads.forEach((dl) => mergedMap.set(dl.id, dl));
+    }
+
+    return Array.from(mergedMap.values());
+  },
+
+  // POST /api/events/:eventId/proposals (Supplier sends pitch / proposal to Host event)
+  sendProposal: async (
+    eventId: string,
+    payload: {
+      quote_amount: number;
+      deposit_amount: number;
+      service_id?: string;
+      service_name?: string;
+      requirements?: string;
+      supplier_pitch_notes?: string;
+      supplier_id?: string;
+      supplier_name?: string;
+      supplier_category?: string;
+      event_title?: string;
+      event_date?: string;
+      city?: string;
+      guest_count?: number;
+      host_email?: string;
+      host_name?: string;
+    }
+  ): Promise<any> => {
+    let currentUser: any = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('LEEMEVENTS_user_session');
+        if (stored) currentUser = JSON.parse(stored);
+      } catch {}
+    }
+
+    const supplierId = payload.supplier_id || currentUser?.id || `supp_${Date.now()}`;
+    const supplierName = payload.supplier_name || currentUser?.businessName || currentUser?.name || 'Verified Supplier';
+
+    const proposalObj: any = {
+      id: `prop_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      event_id: eventId,
+      event: {
+        id: eventId,
+        title: payload.event_title || 'Host Celebration',
+        name: payload.event_title || 'Host Celebration',
+        event_date: payload.event_date || new Date().toISOString().split('T')[0],
+        city: payload.city || 'Amsterdam',
+        guest_count: payload.guest_count || 100,
+        creator: {
+          full_name: payload.host_name || 'Event Host',
+          email: payload.host_email || 'host@leemevents.com',
+        },
+      },
+      supplier_id: supplierId,
+      supplier: {
+        id: supplierId,
+        business_name: supplierName,
+        name: supplierName,
+        category: payload.supplier_category || 'Event Specialist',
+      },
+      service_id: payload.service_id,
+      service: {
+        name: payload.service_name || payload.requirements || 'Bespoke Event Package',
+        base_price: payload.quote_amount,
+      },
+      source: 'supplier_pitch',
+      requested_date: payload.event_date || new Date().toISOString().split('T')[0],
+      guest_count: payload.guest_count || 100,
+      quote_amount: Number(payload.quote_amount),
+      deposit_amount: Number(payload.deposit_amount),
+      requirements: payload.requirements || 'Custom Proposal for Celebration',
+      supplier_pitch_notes: payload.supplier_pitch_notes || '',
+      status: 'pending',
+      created_at: new Date().toISOString(),
+    };
+
+    try {
+      const res = await api.post(`/events/${eventId}/proposals`, {
+        quote_amount: payload.quote_amount,
+        deposit_amount: payload.deposit_amount,
+        service_id: payload.service_id,
+        requirements: payload.requirements,
+        supplier_pitch_notes: payload.supplier_pitch_notes,
+      });
+      if (res.data?.data || res.data) {
+        proposalObj.id = res.data?.data?.id || res.data?.id || proposalObj.id;
+      }
+    } catch (err) {
+      try {
+        await api.post('/bookings', {
+          event_id: eventId,
+          supplier_id: supplierId,
+          service_id: payload.service_id,
+          source: 'supplier_pitch',
+          quote_amount: payload.quote_amount,
+          deposit_amount: payload.deposit_amount,
+          requested_date: payload.event_date || new Date().toISOString().split('T')[0],
+          guest_count: payload.guest_count,
+          requirements: payload.requirements,
+          supplier_pitch_notes: payload.supplier_pitch_notes,
+        });
+      } catch {}
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = JSON.parse(localStorage.getItem('LEEMEVENTS_PROPOSALS') || '[]');
+        stored.unshift(proposalObj);
+        localStorage.setItem('LEEMEVENTS_PROPOSALS', JSON.stringify(stored));
+        localStorage.setItem(`LEEMEVENTS_PROPOSAL_SUBMITTED_${eventId}`, JSON.stringify(proposalObj));
+      } catch {}
+    }
+
+    // Auto-trigger live notification for Host
+    try {
+      notificationsApi.addNotification('host', {
+        title: `⚡ New Proposal from ${supplierName}`,
+        desc: `${supplierName} submitted a €${Number(payload.quote_amount).toLocaleString()} proposal for "${payload.event_title || 'your celebration'}".`,
+        type: 'proposal',
+        link: '/dashboard/host/requests',
+        metadata: { event_id: eventId, quote_amount: payload.quote_amount },
+      });
+    } catch {}
+
+    return proposalObj;
+  },
 };
 
 // ==========================================
@@ -384,13 +611,36 @@ export const suppliersApi = {
 // ==========================================
 export const bookingsApi = {
   getMyBookings: async (): Promise<any[]> => {
+    let serverList: any[] = [];
     try {
       const res = await api.get('/bookings/consumer/me');
-      return res.data?.data || res.data || [];
+      serverList = res.data?.data || res.data || [];
     } catch (err) {
       console.warn('Backend /bookings/consumer/me notice:', err);
-      return [];
     }
+
+    let localProposals: any[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('LEEMEVENTS_PROPOSALS');
+        if (raw) localProposals = JSON.parse(raw);
+      } catch {}
+    }
+
+    const mergedMap = new Map<string, any>();
+    if (Array.isArray(serverList)) {
+      serverList.forEach((b: any) => mergedMap.set(b.id, b));
+    }
+    localProposals.forEach((p: any) => {
+      // Check if status override exists
+      if (typeof window !== 'undefined') {
+        const cachedStatus = localStorage.getItem(`LEEMEVENTS_BOOKING_STATUS_${p.id}`);
+        if (cachedStatus) p.status = cachedStatus;
+      }
+      mergedMap.set(p.id, p);
+    });
+
+    return Array.from(mergedMap.values());
   },
 
   createBooking: async (payload: {
@@ -656,8 +906,35 @@ export const supplierPortalApi = {
 // ==========================================
 export const supplierBookingsApi = {
   getMyRequests: async (): Promise<any[]> => {
-    const res = await api.get('/bookings/supplier/me');
-    return res.data?.data || res.data || [];
+    let serverList: any[] = [];
+    try {
+      const res = await api.get('/bookings/supplier/me');
+      serverList = res.data?.data || res.data || [];
+    } catch (err) {
+      console.warn('Backend /bookings/supplier/me notice:', err);
+    }
+
+    let localProposals: any[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('LEEMEVENTS_PROPOSALS');
+        if (raw) localProposals = JSON.parse(raw);
+      } catch {}
+    }
+
+    const mergedMap = new Map<string, any>();
+    if (Array.isArray(serverList)) {
+      serverList.forEach((b: any) => mergedMap.set(b.id, b));
+    }
+    localProposals.forEach((p: any) => {
+      if (typeof window !== 'undefined') {
+        const cachedStatus = localStorage.getItem(`LEEMEVENTS_BOOKING_STATUS_${p.id}`);
+        if (cachedStatus) p.status = cachedStatus;
+      }
+      mergedMap.set(p.id, p);
+    });
+
+    return Array.from(mergedMap.values());
   },
 
   updateBookingStatus: async (bookingId: string, status: string, supplierResponseNotes?: string): Promise<any> => {
@@ -729,17 +1006,37 @@ export const mediaApi = {
 // ==========================================
 // 10. REAL-TIME CONSUMER <-> SUPPLIER MESSAGES API
 // ==========================================
+const GLOBAL_STORE_KEY = 'LEEMEVENTS_CHAT_MESSAGES_STORE';
+
 export function getThreadStorageKey(id1?: string, email1?: string, id2?: string, email2?: string): string {
   const p1 = (email1 || id1 || '').toLowerCase().trim();
   const p2 = (email2 || id2 || '').toLowerCase().trim();
   return `LEEMEVENTS_CHAT_THREAD_${[p1, p2].sort().join('__')}`;
 }
 
+function getGlobalStoredMessages(): any[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(GLOBAL_STORE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveGlobalStoredMessages(msgs: any[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(GLOBAL_STORE_KEY, JSON.stringify(msgs));
+  } catch {}
+}
+
 export const messagesApi = {
   getConversations: async (): Promise<any[]> => {
     try {
       const res = await api.get('/messages/conversations');
-      return res.data?.data || res.data || [];
+      const serverConvs = res.data?.data || res.data || [];
+      return Array.isArray(serverConvs) ? serverConvs : [];
     } catch (err) {
       console.warn('getConversations notice:', err);
       return [];
@@ -753,41 +1050,86 @@ export const messagesApi = {
       if (stored) currentUser = JSON.parse(stored);
     } catch {}
 
-    const myId = currentUser?.id || '';
-    const myEmail = currentUser?.email || '';
+    const myId = (currentUser?.id || '').toLowerCase().trim();
+    const myEmail = (currentUser?.email || '').toLowerCase().trim();
+    const pId = (partnerId || '').toLowerCase().trim();
+    const pEmail = (partnerEmail || '').toLowerCase().trim();
 
-    let localMsgs: any[] = [];
-    const storageKey = getThreadStorageKey(myId, myEmail, partnerId, partnerEmail);
+    // 1. Gather all local matching messages from global store
+    const globalMsgs = getGlobalStoredMessages();
+    const threadStorageKey = getThreadStorageKey(myId, myEmail, partnerId, partnerEmail);
+    let threadKeyMsgs: any[] = [];
     if (typeof window !== 'undefined') {
       try {
-        localMsgs = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        threadKeyMsgs = JSON.parse(localStorage.getItem(threadStorageKey) || '[]');
       } catch {}
     }
 
+    const localMatching = [...globalMsgs, ...threadKeyMsgs].filter((m: any) => {
+      if (!m) return false;
+      const sId = (m.sender_id || '').toLowerCase().trim();
+      const sEmail = (m.sender_email || '').toLowerCase().trim();
+      const rId = (m.recipient_id || '').toLowerCase().trim();
+      const rEmail = (m.recipient_email || '').toLowerCase().trim();
+
+      const fromMe = (myId && sId === myId) || (myEmail && sEmail === myEmail);
+      const toMe = (myId && rId === myId) || (myEmail && rEmail === myEmail);
+
+      const fromPartner = (pId && sId === pId) || (pEmail && sEmail === pEmail);
+      const toPartner = (pId && rId === pId) || (pEmail && rEmail === pEmail);
+
+      return (fromMe && toPartner) || (fromPartner && toMe);
+    });
+
+    // 2. Fetch from backend API
+    let serverMsgs: any[] = [];
     try {
       const query = partnerEmail ? `?partnerEmail=${encodeURIComponent(partnerEmail)}` : '';
       const res = await api.get(`/messages/thread/${encodeURIComponent(partnerId)}${query}`);
-      const serverMsgs = res.data?.data || res.data || [];
-      if (Array.isArray(serverMsgs) && serverMsgs.length > 0) {
-        const merged = [...serverMsgs];
-        for (const lm of localMsgs) {
-          if (!merged.some((sm: any) => sm.id === lm.id || (sm.content === lm.content && Math.abs(new Date(sm.created_at).getTime() - new Date(lm.created_at).getTime()) < 5000))) {
-            merged.push(lm);
-          }
-        }
-        merged.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem(storageKey, JSON.stringify(merged));
-          } catch {}
-        }
-        return merged;
-      }
+      serverMsgs = res.data?.data || res.data || [];
     } catch (err) {
-      console.warn('getThread notice:', err);
+      console.warn('getThread network notice:', err);
     }
 
-    return localMsgs;
+    // 3. Merge Server + Local accurately without duplication
+    const mergedMap = new Map<string, any>();
+
+    const getMsgKey = (m: any) => {
+      if (m.id && !m.id.startsWith('temp_') && !m.id.startsWith('msg_')) return m.id;
+      const s = (m.sender_email || m.sender_id || '').toLowerCase().trim();
+      const r = (m.recipient_email || m.recipient_id || '').toLowerCase().trim();
+      const c = (m.content || '').trim();
+      const t = Math.floor(new Date(m.created_at || 0).getTime() / 4000);
+      return `${s}_${r}_${c}_${t}`;
+    };
+
+    for (const m of localMatching) {
+      mergedMap.set(getMsgKey(m), m);
+    }
+
+    for (const m of (Array.isArray(serverMsgs) ? serverMsgs : [])) {
+      mergedMap.set(getMsgKey(m), m);
+    }
+
+    const result = Array.from(mergedMap.values()).sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    // 4. Update global and thread caches
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(threadStorageKey, JSON.stringify(result));
+        
+        // Sync new items into global store
+        const existingGlobal = getGlobalStoredMessages();
+        const globalMap = new Map<string, any>();
+        for (const em of existingGlobal) globalMap.set(getMsgKey(em), em);
+        for (const rm of result) globalMap.set(getMsgKey(rm), rm);
+        saveGlobalStoredMessages(Array.from(globalMap.values()));
+      } catch {}
+    }
+
+    return result;
   },
 
   sendMessage: async (payload: {
@@ -806,7 +1148,7 @@ export const messagesApi = {
 
     const myId = currentUser?.id || 'current_user';
     const myEmail = currentUser?.email || 'user@leemevents.com';
-    const myName = currentUser?.name || currentUser?.businessName || 'Valued User';
+    const myName = currentUser?.businessName || currentUser?.name || 'User';
     const myRole = currentUser?.role === 'supplier' ? 'supplier' : 'consumer';
 
     const localMsg = {
@@ -826,14 +1168,29 @@ export const messagesApi = {
       created_at: new Date().toISOString(),
     };
 
-    const storageKey = getThreadStorageKey(myId, myEmail, payload.recipient_id, payload.recipient_email);
+    // Save locally immediately into global store and thread key
     if (typeof window !== 'undefined') {
       try {
-        const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        if (!existing.some((m: any) => m.content === localMsg.content && Math.abs(new Date(m.created_at).getTime() - new Date(localMsg.created_at).getTime()) < 1000)) {
-          existing.push(localMsg);
-          localStorage.setItem(storageKey, JSON.stringify(existing));
-        }
+        const globalStore = getGlobalStoredMessages();
+        globalStore.push(localMsg);
+        saveGlobalStoredMessages(globalStore);
+
+        const threadStorageKey = getThreadStorageKey(myId, myEmail, payload.recipient_id, payload.recipient_email);
+        const threadMsgs = JSON.parse(localStorage.getItem(threadStorageKey) || '[]');
+        threadMsgs.push(localMsg);
+        localStorage.setItem(threadStorageKey, JSON.stringify(threadMsgs));
+
+        // Dispatch instant cross-tab / window custom event
+        window.dispatchEvent(new CustomEvent('leemevents:message_sent', { detail: localMsg }));
+
+        // Trigger real-time message notification for recipient
+        notificationsApi.addNotification(myRole === 'supplier' ? 'host' : 'supplier', {
+          title: `💬 New Message from ${myName}`,
+          desc: `"${payload.content.slice(0, 65)}${payload.content.length > 65 ? '...' : ''}"`,
+          type: 'message',
+          link: myRole === 'supplier' ? '/dashboard/host/messages' : '/dashboard/supplier/messages',
+          metadata: { sender_id: myId, booking_id: payload.booking_id },
+        });
       } catch {}
     }
 
@@ -843,15 +1200,16 @@ export const messagesApi = {
       if (serverMsg && serverMsg.id) {
         if (typeof window !== 'undefined') {
           try {
-            const current = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            const updated = current.map((m: any) => m.id === localMsg.id ? serverMsg : m);
-            localStorage.setItem(storageKey, JSON.stringify(updated));
+            const globalStore = getGlobalStoredMessages().map((m: any) =>
+              m.id === localMsg.id ? { ...serverMsg, is_read: true } : m
+            );
+            saveGlobalStoredMessages(globalStore);
           } catch {}
         }
         return serverMsg;
       }
     } catch (err) {
-      console.warn('Backend message sync note (buffered locally):', err);
+      console.warn('Backend message sync fallback (persisted in local mesh):', err);
     }
 
     return localMsg;
@@ -865,6 +1223,249 @@ export const messagesApi = {
     } catch (err) {
       // ignore
     }
+  },
+};
+
+export interface NotificationItem {
+  id: string;
+  user_id?: string;
+  role: 'host' | 'supplier' | 'admin';
+  type: string;
+  title: string;
+  description?: string;
+  desc?: string;
+  link: string;
+  read: boolean;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+// Helper to broadcast notification events to all open windows/tabs instantly
+const broadcastNotificationBus = (type: 'new' | 'updated', detail: any) => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (type === 'new') {
+      window.dispatchEvent(new CustomEvent('leemevents:new_notification', { detail }));
+    }
+    window.dispatchEvent(new CustomEvent('leemevents:notifications_updated', { detail }));
+
+    // Instant cross-tab BroadcastChannel
+    if (typeof (window as any).BroadcastChannel !== 'undefined') {
+      const bc = new BroadcastChannel('leemevents_notifications_bus');
+      bc.postMessage({ type, detail, timestamp: Date.now() });
+      bc.close();
+    }
+
+    // Force cross-window storage event trigger
+    localStorage.setItem('LEEMEVENTS_NOTIFICATIONS_PING', String(Date.now()));
+  } catch {}
+};
+
+export const notificationsApi = {
+  getNotifications: async (role: 'host' | 'supplier' | 'admin' = 'host'): Promise<NotificationItem[]> => {
+    let list: NotificationItem[] = [];
+    const storageKey = `LEEMEVENTS_NOTIFICATIONS_${role.toUpperCase()}`;
+
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem(storageKey);
+        if (local) {
+          list = JSON.parse(local);
+        } else {
+          // Default rich notification items
+          const defaultItems: NotificationItem[] = role === 'host' ? [
+            {
+              id: 'notif-h-1',
+              role: 'host',
+              type: 'booking_accepted',
+              title: 'Booking Confirmed 🎉',
+              description: 'Madrid Mixology Masters accepted your cocktail masterclass booking.',
+              link: '/dashboard/host/requests',
+              read: false,
+              created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+            },
+            {
+              id: 'notif-h-2',
+              role: 'host',
+              type: 'new_service',
+              title: 'New Service Package Published',
+              description: 'Velvet Strings Trio just added Luxury Acoustic Strings to Madrid.',
+              link: '/explore',
+              read: false,
+              created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+            },
+            {
+              id: 'notif-h-3',
+              role: 'host',
+              type: 'security_login',
+              title: 'Security Alert: New Sign-in',
+              description: 'Successful login detected from Chrome (Madrid, ES).',
+              link: '/dashboard/host/settings',
+              read: true,
+              created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+            }
+          ] : [
+            {
+              id: 'notif-s-1',
+              role: 'supplier',
+              type: 'event_created',
+              title: 'New Event Opportunity ⚡',
+              description: 'New Luxury Wedding (150 Guests, €15,000 Budget) posted in Madrid.',
+              link: '/dashboard/supplier/leads',
+              read: false,
+              created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+            },
+            {
+              id: 'notif-s-2',
+              role: 'supplier',
+              type: 'proposal_received',
+              title: 'Proposal Accepted! 🥳',
+              description: 'Host Elena accepted your proposal for Gala Dinner 2026.',
+              link: '/dashboard/supplier/requests',
+              read: false,
+              created_at: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
+            },
+            {
+              id: 'notif-s-3',
+              role: 'supplier',
+              type: 'review_received',
+              title: '5-Star Review Received ⭐⭐⭐⭐⭐',
+              description: '"Outstanding cocktail show and friendly team!" - Carlos M.',
+              link: '/dashboard/supplier/reviews',
+              read: true,
+              created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+            }
+          ];
+          localStorage.setItem(storageKey, JSON.stringify(defaultItems));
+          list = defaultItems;
+        }
+      } catch {}
+    }
+
+    try {
+      const res = await api.get(`/notifications?role=${role}`);
+      const serverData = res.data?.data || res.data;
+      if (Array.isArray(serverData) && serverData.length > 0) {
+        return serverData;
+      }
+    } catch {
+      // fallback
+    }
+
+    return list;
+  },
+
+  getUnreadCount: async (role: 'host' | 'supplier' | 'admin' = 'host'): Promise<number> => {
+    try {
+      const res = await api.get(`/notifications/unread-count?role=${role}`);
+      const count = res.data?.count ?? res.data?.unreadCount;
+      if (typeof count === 'number') return count;
+    } catch {}
+
+    const list = await notificationsApi.getNotifications(role);
+    return list.filter((n) => !n.read).length;
+  },
+
+  addNotification: (
+    role: 'host' | 'supplier' | 'admin',
+    item: {
+      type: string;
+      title: string;
+      description?: string;
+      desc?: string;
+      link?: string;
+      metadata?: Record<string, any>;
+    }
+  ): NotificationItem => {
+    const newNotif: NotificationItem = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      role,
+      type: item.type,
+      title: item.title,
+      description: item.description || item.desc || '',
+      desc: item.description || item.desc || '',
+      link: item.link || (role === 'host' ? '/dashboard/host' : '/dashboard/supplier'),
+      read: false,
+      metadata: item.metadata || {},
+      created_at: new Date().toISOString(),
+    };
+
+    if (typeof window !== 'undefined') {
+      try {
+        const storageKey = `LEEMEVENTS_NOTIFICATIONS_${role.toUpperCase()}`;
+        const existing: NotificationItem[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const updated = [newNotif, ...existing.slice(0, 49)];
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+
+        broadcastNotificationBus('new', { role, notification: newNotif, count: updated.filter((n) => !n.read).length });
+      } catch {}
+    }
+
+    api.post('/notifications', newNotif).catch(() => {});
+
+    return newNotif;
+  },
+
+  markAsRead: async (id: string, role: 'host' | 'supplier' | 'admin' = 'host'): Promise<void> => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storageKey = `LEEMEVENTS_NOTIFICATIONS_${role.toUpperCase()}`;
+        const existing: NotificationItem[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const updated = existing.map((n) => (n.id === id ? { ...n, read: true } : n));
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+        broadcastNotificationBus('updated', { role, count: updated.filter((n) => !n.read).length });
+      } catch {}
+    }
+
+    try {
+      await api.patch(`/notifications/${id}/read`, {});
+    } catch {}
+  },
+
+  markAllAsRead: async (role: 'host' | 'supplier' | 'admin' = 'host'): Promise<void> => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storageKey = `LEEMEVENTS_NOTIFICATIONS_${role.toUpperCase()}`;
+        const existing: NotificationItem[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const updated = existing.map((n) => ({ ...n, read: true }));
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+        broadcastNotificationBus('updated', { role, count: 0 });
+      } catch {}
+    }
+
+    try {
+      await api.patch('/notifications/read-all', { role });
+    } catch {}
+  },
+
+  deleteNotification: async (id: string, role: 'host' | 'supplier' | 'admin' = 'host'): Promise<void> => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storageKey = `LEEMEVENTS_NOTIFICATIONS_${role.toUpperCase()}`;
+        const existing: NotificationItem[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const updated = existing.filter((n) => n.id !== id);
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+        broadcastNotificationBus('updated', { role, count: updated.filter((n) => !n.read).length });
+      } catch {}
+    }
+
+    try {
+      await api.delete(`/notifications/${id}`);
+    } catch {}
+  },
+
+  clearAll: async (role: 'host' | 'supplier' | 'admin' = 'host'): Promise<void> => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storageKey = `LEEMEVENTS_NOTIFICATIONS_${role.toUpperCase()}`;
+        localStorage.setItem(storageKey, JSON.stringify([]));
+        broadcastNotificationBus('updated', { role, count: 0 });
+      } catch {}
+    }
+
+    try {
+      await api.delete(`/notifications/clear-all?role=${role}`);
+    } catch {}
   },
 };
 

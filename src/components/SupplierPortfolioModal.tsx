@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
   X,
@@ -38,10 +39,30 @@ export default function SupplierPortfolioModal({
   initialSupplier,
   serviceName,
 }: SupplierPortfolioModalProps) {
+  const [mounted, setMounted] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [supplier, setSupplier] = useState<any>(initialSupplier || null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [cvData, setCvData] = useState<any>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -85,6 +106,17 @@ export default function SupplierPortfolioModal({
 
     loadData();
   }, [isOpen, supplierId, initialSupplier]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -210,14 +242,28 @@ export default function SupplierPortfolioModal({
       ? Number(supplier.rating_avg).toFixed(2)
       : null;
 
-  return (
+  if (!mounted || !isOpen) return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-[120] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-[999999] w-screen h-screen min-h-[100dvh] bg-charcoal/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-200"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        minHeight: '100vh',
+        margin: 0,
+        zIndex: 999999,
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-stone-200 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 my-auto">
+      <div className="relative bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-stone-200 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 my-auto z-10">
         {/* Sticky Modal Header */}
         <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md px-6 py-4 border-b border-stone-100 flex items-center justify-between rounded-t-3xl">
           <div className="flex items-center gap-3">
@@ -450,6 +496,7 @@ export default function SupplierPortfolioModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

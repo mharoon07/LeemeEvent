@@ -1,6 +1,6 @@
 import { ApiResponse } from '@/types/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 const TOKEN_KEY = 'LEEMEVENTS_auth_token';
 
 export const tokenStorage = {

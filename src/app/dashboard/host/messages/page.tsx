@@ -64,6 +64,7 @@ export default function HostMessagesPage() {
   const [inputText, setInputText] = useState('');
   const [loadingThreads, setLoadingThreads] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -83,14 +84,32 @@ export default function HostMessagesPage() {
     }
   };
 
+  // Cross-tab / Cross-window instant sync
+  useEffect(() => {
+    const handleStorageOrCustom = () => {
+      if (activePartner) {
+        loadThreadMessages(activePartner, false);
+      }
+      loadConversations(false);
+    };
+
+    window.addEventListener('storage', handleStorageOrCustom);
+    window.addEventListener('leemevents:message_sent', handleStorageOrCustom);
+    return () => {
+      window.removeEventListener('storage', handleStorageOrCustom);
+      window.removeEventListener('leemevents:message_sent', handleStorageOrCustom);
+    };
+  }, [activePartner]);
+
   // 1. URL Query Param Support
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const supplierId = params.get('supplierId');
-      const supplierEmail = params.get('supplierEmail');
-      const supplierName = params.get('supplierName');
-      const bookingId = params.get('bookingId');
+      const supplierId = params.get('supplierId') || params.get('supplier_id') || params.get('id');
+      const supplierEmail = params.get('supplierEmail') || params.get('supplier_email') || params.get('partner_email') || params.get('email');
+      const supplierName = params.get('supplierName') || params.get('supplier_name') || params.get('name');
+      const bookingId = params.get('bookingId') || params.get('booking_id');
+      const serviceName = params.get('service_name') || params.get('serviceName');
 
       if (supplierId || supplierEmail) {
         const directThread: ConversationThread = {
@@ -98,10 +117,11 @@ export default function HostMessagesPage() {
           partner_email: supplierEmail || '',
           partner_name: supplierName || supplierEmail?.split('@')[0] || 'Specialist Partner',
           partner_role: 'supplier',
-          last_message: 'Booking consultation inquiry',
+          last_message: serviceName ? `Inquiry for ${serviceName}` : 'Booking consultation inquiry',
           last_message_time: new Date().toISOString(),
           last_sender_role: 'consumer',
           booking_id: bookingId || undefined,
+          service_name: serviceName || undefined,
           unread_count: 0,
         };
         setActivePartner(directThread);
@@ -128,16 +148,29 @@ export default function HostMessagesPage() {
 
       const bookingThreads: ConversationThread[] = (bookingsData || []).map((b: any) => {
         const supplier = b.supplier || b.service?.supplier;
-        const suppId = supplier?.id || b.supplier_id || `supp_${b.id}`;
-        const suppEmail = supplier?.email || supplier?.profile?.email || b.supplier_email || 'specialist@leemevents.com';
-        const suppName = supplier?.business_name || supplier?.name || b.service?.name || 'Verified Specialist';
+        const suppId = supplier?.id || supplier?.auth_user_id || b.supplier_id || `supp_${b.id}`;
+        const suppEmail =
+          b.supplier_email ||
+          supplier?.email ||
+          supplier?.profile?.email ||
+          b.service?.supplier?.email ||
+          b.service?.supplier?.profile?.email ||
+          'specialist@leemevents.com';
+        const suppName =
+          b.supplier_name ||
+          supplier?.business_name ||
+          supplier?.name ||
+          supplier?.profile?.business_name ||
+          supplier?.profile?.name ||
+          b.service?.name ||
+          'Verified Specialist';
         return {
           partner_id: suppId,
           partner_email: suppEmail,
           partner_name: suppName,
           partner_role: 'supplier',
-          last_message: b.supplier_response_notes || `Booking consultation for ${b.service?.name || 'Event Service'}`,
-          last_message_time: b.created_at || new Date().toISOString(),
+          last_message: b.supplier_response_notes || b.requirements || `Booking consultation for ${b.service?.name || 'Event Service'}`,
+          last_message_time: b.updated_at || b.created_at || new Date().toISOString(),
           last_sender_role: 'supplier',
           booking_id: b.id,
           service_name: b.service?.name,
@@ -179,6 +212,19 @@ export default function HostMessagesPage() {
       console.error('Error loading conversations:', err);
     } finally {
       setLoadingThreads(false);
+    }
+  };
+
+  // Manual Refresh Handler
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        loadConversations(false),
+        activePartner ? loadThreadMessages(activePartner, false) : Promise.resolve(),
+      ]);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
     }
   };
 
@@ -347,15 +393,14 @@ export default function HostMessagesPage() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                loadConversations(false);
-                if (activePartner) loadThreadMessages(activePartner, false);
-              }}
-              className="p-2.5 rounded-2xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors shadow-soft-sm flex items-center gap-1.5 text-xs font-semibold"
+              type="button"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className="p-2.5 rounded-2xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors shadow-soft-sm flex items-center gap-1.5 text-xs font-semibold disabled:opacity-60 cursor-pointer"
               title="Refresh Messages"
             >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
+              <RefreshCw className={`w-4 h-4 transition-transform ${isRefreshing ? 'animate-spin text-taupe' : ''}`} />
+              <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
             </button>
           </div>
         </div>

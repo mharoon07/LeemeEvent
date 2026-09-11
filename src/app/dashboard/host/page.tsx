@@ -1,12 +1,10 @@
 
 
 
-
-
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
 import HostLayout from '@/components/dashboard/HostLayout';
@@ -21,6 +19,7 @@ import {
   decodeServiceDescription,
   normalizeCategory,
   normalizeEventType,
+  notificationsApi,
 } from '@/lib/services/consumerApi';
 import { EventItem, ContractItem, PaymentItem, EventType } from '@/types/api';
 import {
@@ -56,12 +55,16 @@ import {
   Trash2,
   Package,
   Building2,
+  Tag,
+  Info,
+  Check,
 } from 'lucide-react';
 
 export default function HostDashboardHome() {
   const { user, isLoading: authLoading } = useAuth();
   const { t } = useLanguage();
 
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
@@ -77,13 +80,33 @@ export default function HostDashboardHome() {
   const [newEvent, setNewEvent] = useState({
     title: '',
     event_type_id: '',
-    event_type: 'Wedding',
+    event_type: 'Wedding Celebration',
     event_date: '2026-10-15',
     city: 'Amsterdam',
     venue_name: '',
+    description: '',
     guest_count: 100,
     estimated_budget: 25000,
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (isCreateModalOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [isCreateModalOpen]);
 
   const loadData = async () => {
     if (authLoading) return;
@@ -265,12 +288,33 @@ export default function HostDashboardHome() {
         date: newEvent.event_date,
         city: newEvent.city.trim(),
         venue_name: newEvent.venue_name?.trim() || undefined,
+        description: newEvent.description?.trim() || undefined,
         guest_count: Number(newEvent.guest_count),
         estimated_budget: Number(newEvent.estimated_budget),
         status: 'planning',
       };
 
       const created = await eventsApi.createEvent(payload);
+
+      // Trigger notification for verified suppliers in the marketplace
+      try {
+        notificationsApi.addNotification('supplier', {
+          title: `🎉 New Host Celebration in ${created.city || 'your area'}`,
+          desc: `${user?.name || 'A host client'} created "${created.title}" with €${Number(created.estimated_budget || 25000).toLocaleString()} budget (${created.guest_count || 100} guests).`,
+          type: 'event',
+          link: '/dashboard/supplier/leads',
+          metadata: { event_id: created.id },
+        });
+
+        notificationsApi.addNotification('host', {
+          title: `🎉 Celebration "${created.title}" Published`,
+          desc: `Your celebration in ${created.city || 'your area'} is live in the vendor marketplace.`,
+          type: 'event',
+          link: '/dashboard/host/events',
+          metadata: { event_id: created.id },
+        });
+      } catch {}
+
       setEvents((prev) => [created, ...prev.filter((item) => item.id !== created.id)]);
       setSelectedEventId(created.id);
       setIsCreateModalOpen(false);
@@ -278,10 +322,11 @@ export default function HostDashboardHome() {
       setNewEvent({
         title: '',
         event_type_id: eventTypes[0]?.id || '',
-        event_type: eventTypes[0]?.name || 'Wedding',
+        event_type: eventTypes[0]?.name || 'Wedding Celebration',
         event_date: '2026-10-15',
         city: 'Amsterdam',
         venue_name: '',
+        description: '',
         guest_count: 100,
         estimated_budget: 25000,
       });
@@ -1009,193 +1054,394 @@ export default function HostDashboardHome() {
           </Link>
         </div>
 
-        {/* INLINE CREATE EVENT MODAL */}
-        {isCreateModalOpen && (
+        {/* 100VH LUXURY CELEBRATION STUDIO PORTAL MODAL */}
+        {mounted && isCreateModalOpen && createPortal(
           <div
-            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+            className="fixed inset-0 z-[999999] w-screen h-screen min-h-[100dvh] bg-charcoal/90 backdrop-blur-md flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-hidden overscroll-contain"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              minHeight: '100vh',
+              margin: 0,
+              zIndex: 999999,
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) setIsCreateModalOpen(false);
             }}
           >
-            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-200 relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto my-auto">
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="mb-6">
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-taupe uppercase tracking-wider mb-1">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Real Database Synced</span>
+            <div className="relative bg-white sm:rounded-3xl w-full max-w-5xl h-full sm:h-auto sm:max-h-[94vh] flex flex-col border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 z-10">
+              {/* Modal Clean Luxury Header */}
+              <div className="px-6 sm:px-8 py-5 border-b border-stone-200 flex items-center justify-between bg-white text-charcoal shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-charcoal text-white flex items-center justify-center shadow-soft-sm shrink-0">
+                    <Sparkles className="w-5 h-5 text-amber-300" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-taupe bg-stone-100 px-2.5 py-0.5 rounded-full border border-stone-200">
+                        Host Celebration Studio
+                      </span>
+                    </div>
+                    <h2 className="text-base sm:text-lg font-bold text-charcoal tracking-tight mt-0.5">
+                      Create & Publish New Celebration
+                    </h2>
+                    <p className="text-xs text-stone-500 hidden sm:block">
+                      Post your celebration details to the supplier marketplace & receive tailored quotes.
+                    </p>
+                  </div>
                 </div>
-                <h2 className="text-2xl font-bold text-charcoal">Create New Celebration</h2>
-                <p className="text-xs text-stone-500 mt-1">
-                  Persists your event directly into the Supabase database.
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-charcoal flex items-center justify-center transition-colors shrink-0"
+                  aria-label="Close modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {createError && (
-                <div className="mb-4 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 flex items-start gap-2.5">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="font-bold">Notice</p>
-                    <p className="mt-0.5 leading-snug">{createError}</p>
+              {/* Modal Body: 2 Columns */}
+              <form onSubmit={handleCreateEvent} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-y-auto min-h-0 divide-y lg:divide-y-0 lg:divide-x divide-stone-200">
+                  {/* Left Column: Form Inputs (Col 7) */}
+                  <div className="lg:col-span-7 p-5 sm:p-7 space-y-4 overflow-y-auto">
+                    {createError && (
+                      <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 flex items-start gap-2.5">
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="font-bold">Notice</p>
+                          <p className="mt-0.5 leading-snug">{createError}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Celebration Title */}
+                    <div>
+                      <label className="block text-xs font-bold text-charcoal mb-1.5">
+                        Celebration Title *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Liam & Sophia's Luxury Wedding Gala"
+                        value={newEvent.title}
+                        onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                      />
+                      {/* Quick Title Chips */}
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {[
+                          '💍 Luxury Wedding Gala',
+                          '🎂 Milestone Birthday',
+                          '🥂 Corporate Gala 2026',
+                          '🍾 VIP Yacht Gathering',
+                          '✨ Anniversary Soirée',
+                        ].map((chip) => (
+                          <button
+                            key={chip}
+                            type="button"
+                            onClick={() => setNewEvent({ ...newEvent, title: chip })}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors"
+                          >
+                            {chip}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Event Type & Date */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-charcoal mb-1.5">
+                          Event Type *
+                        </label>
+                        <select
+                          value={newEvent.event_type_id}
+                          onChange={(e) => {
+                            const selectedId = e.target.value;
+                            const matched = eventTypes.find((et) => et.id === selectedId);
+                            setNewEvent({
+                              ...newEvent,
+                              event_type_id: selectedId,
+                              event_type: matched?.name || 'Custom Celebration',
+                            });
+                          }}
+                          className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
+                        >
+                          {eventTypes.length > 0 ? (
+                            eventTypes.map((et) => (
+                              <option key={et.id} value={et.id}>
+                                {et.name}
+                              </option>
+                            ))
+                          ) : (
+                            <>
+                              <option value="wedding">Wedding Celebration</option>
+                              <option value="corporate">Corporate Gala</option>
+                              <option value="birthday">Birthday / Anniversary</option>
+                            </>
+                          )}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-charcoal mb-1.5">
+                          Celebration Date *
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={newEvent.event_date}
+                          onChange={(e) => setNewEvent({ ...newEvent, event_date: e.target.value })}
+                          className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* City & Venue */}
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-charcoal mb-1.5">
+                            City / Location *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Amsterdam, Madrid, Paris"
+                            value={newEvent.city}
+                            onChange={(e) => setNewEvent({ ...newEvent, city: e.target.value })}
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-charcoal mb-1.5">
+                            Venue Name (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Grand Canal Estate"
+                            value={newEvent.venue_name}
+                            onChange={(e) => setNewEvent({ ...newEvent, venue_name: e.target.value })}
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                          />
+                        </div>
+                      </div>
+
+                      {/* City Quick Pills */}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] text-stone-400 font-semibold uppercase">Popular:</span>
+                        {['Amsterdam', 'Rotterdam', 'Utrecht', 'Den Haag', 'Madrid', 'Barcelona', 'Paris', 'London'].map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setNewEvent({ ...newEvent, city: c })}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-colors ${
+                              newEvent.city.toLowerCase() === c.toLowerCase()
+                                ? 'bg-charcoal text-white'
+                                : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                            }`}
+                          >
+                            {c}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Guests & Budget */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200">
+                        <label className="block text-xs font-bold text-charcoal mb-1 flex items-center justify-between">
+                          <span>Guest Count</span>
+                          <span className="text-xs font-mono font-bold text-taupe">{newEvent.guest_count} Guests</span>
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={5000}
+                          value={newEvent.guest_count}
+                          onChange={(e) => setNewEvent({ ...newEvent, guest_count: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
+                        />
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200">
+                        <label className="block text-xs font-bold text-charcoal mb-1 flex items-center justify-between">
+                          <span>Estimated Budget (€)</span>
+                          <span className="text-xs font-mono font-bold text-emerald-700">
+                            €{Number(newEvent.estimated_budget).toLocaleString()}
+                          </span>
+                        </label>
+                        <input
+                          type="number"
+                          min={500}
+                          step={500}
+                          value={newEvent.estimated_budget}
+                          onChange={(e) =>
+                            setNewEvent({ ...newEvent, estimated_budget: Number(e.target.value) })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Metric indicator */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs">
+                      <div className="flex items-center gap-2 text-amber-900 font-medium">
+                        <DollarSign className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Estimated Allocation per Guest:</span>
+                      </div>
+                      <span className="font-bold text-amber-950 font-mono">
+                        €{newEvent.guest_count > 0 ? Math.round(newEvent.estimated_budget / newEvent.guest_count) : 0} / guest
+                      </span>
+                    </div>
+
+                    {/* Requirements & Notes */}
+                    <div>
+                      <label className="block text-xs font-bold text-charcoal mb-1.5">
+                        Celebration Vibe & Requirements (Optional)
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Tell suppliers about your vision, dietary needs, music vibe, floral aesthetics, or specific service requests..."
+                        value={newEvent.description}
+                        onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                        className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Right Column: Live Marketplace Preview & Host Guarantees (Col 5) */}
+                  <div className="lg:col-span-5 p-5 sm:p-7 bg-stone-50/70 space-y-5 overflow-y-auto">
+                    {/* Live Preview Card */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                          Live Marketplace Preview
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          ⚡ Instant Lead
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-white border border-stone-200 shadow-soft-sm space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="text-[10px] font-bold text-taupe uppercase tracking-wider block">
+                              {newEvent.event_type}
+                            </span>
+                            <h4 className="text-sm font-bold text-charcoal leading-snug">
+                              {newEvent.title || 'Untitled Celebration'}
+                            </h4>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 text-[10px] font-semibold">
+                            Planning
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px] text-stone-600 pt-2 border-t border-stone-100">
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-taupe" />
+                            <span className="truncate">{newEvent.city || 'Location'}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <CalendarDays className="w-3.5 h-3.5 text-taupe" />
+                            <span>{newEvent.event_date || 'Date'}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-taupe" />
+                            <span>{newEvent.guest_count} Guests</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="font-bold text-emerald-700">
+                              €{Number(newEvent.estimated_budget).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        {newEvent.venue_name && (
+                          <p className="text-[11px] text-stone-500 flex items-center gap-1">
+                            <Building2 className="w-3 h-3 text-stone-400" />
+                            <span className="truncate">Venue: {newEvent.venue_name}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* How It Works */}
+                    <div className="p-4 rounded-2xl bg-white border border-stone-200/90 space-y-2.5 text-xs text-stone-600">
+                      <p className="font-bold text-charcoal text-xs flex items-center gap-1.5">
+                        <Check className="w-4 h-4 text-emerald-600" />
+                        What happens when you launch?
+                      </p>
+                      <ul className="space-y-2 text-[11px] leading-relaxed">
+                        <li className="flex items-start gap-2">
+                          <span className="w-4 h-4 rounded-full bg-taupe/15 text-taupe text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                          <span>Verified luxury suppliers in <strong>{newEvent.city}</strong> get notified about your celebration.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="w-4 h-4 rounded-full bg-taupe/15 text-taupe text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                          <span>Suppliers submit customized pitches and quotes directly to your inquiries hub.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="w-4 h-4 rounded-full bg-taupe/15 text-taupe text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                          <span>You review proposals, chat in real-time, and accept with 20% escrow protection.</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Protection Badge */}
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>100% Escrow Security:</strong> Deposit is held safely until event delivery.</span>
+                    </div>
                   </div>
                 </div>
-              )}
 
-              <form onSubmit={handleCreateEvent} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Celebration Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Liam & Sophia's Wedding Gala"
-                    value={newEvent.title}
-                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Event Type
-                    </label>
-                    <select
-                      value={newEvent.event_type_id}
-                      onChange={(e) => {
-                        const selectedId = e.target.value;
-                        const matched = eventTypes.find((et) => et.id === selectedId);
-                        setNewEvent({
-                          ...newEvent,
-                          event_type_id: selectedId,
-                          event_type: matched?.name || 'Wedding Celebration',
-                        });
-                      }}
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
+                {/* Modal Footer */}
+                <div className="px-6 sm:px-8 py-4 border-t border-stone-200 bg-stone-50/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                  <p className="text-[11px] text-stone-500 hidden sm:block">
+                    Free to publish • No obligation to book • Real-time supplier proposals
+                  </p>
+                  <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-100 transition-colors"
                     >
-                      {eventTypes.length > 0 ? (
-                        eventTypes.map((et) => (
-                          <option key={et.id} value={et.id}>
-                            {et.name}
-                          </option>
-                        ))
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={creatingEvent || !newEvent.title.trim()}
+                      className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-soft-sm disabled:opacity-50"
+                    >
+                      {creatingEvent ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Publishing Celebration...</span>
+                        </>
                       ) : (
                         <>
-                          <option value="wedding">Wedding Celebration</option>
-                          <option value="corporate">Corporate Gala</option>
-                          <option value="birthday">Birthday / Anniversary</option>
+                          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                          <span>Launch Celebration & Alert Suppliers</span>
                         </>
                       )}
-                    </select>
+                    </button>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Event Date *
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={newEvent.event_date}
-                      onChange={(e) => setNewEvent({ ...newEvent, event_date: e.target.value })}
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      City / Location *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Amsterdam / Den Haag"
-                      value={newEvent.city}
-                      onChange={(e) => setNewEvent({ ...newEvent, city: e.target.value })}
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Venue Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Grand Royal Estate (Optional)"
-                      value={newEvent.venue_name}
-                      onChange={(e) => setNewEvent({ ...newEvent, venue_name: e.target.value })}
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Guest Count
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={newEvent.guest_count}
-                      onChange={(e) => setNewEvent({ ...newEvent, guest_count: Number(e.target.value) })}
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Estimated Budget (€)
-                    </label>
-                    <input
-                      type="number"
-                      min={500}
-                      step={500}
-                      value={newEvent.estimated_budget}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, estimated_budget: Number(e.target.value) })
-                      }
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4 flex items-center justify-end gap-3 border-t border-stone-100">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={creatingEvent}
-                    className="btn-primary px-5 py-2.5 text-xs font-bold flex items-center gap-2"
-                  >
-                    {creatingEvent ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Saving to Database...</span>
-                      </>
-                    ) : (
-                      <span>Save & Launch Event</span>
-                    )}
-                  </button>
                 </div>
               </form>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </HostLayout>

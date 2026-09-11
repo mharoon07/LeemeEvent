@@ -26,8 +26,10 @@ import {
   X,
   RefreshCw,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import SuspendedAccountModal from '@/components/dashboard/SuspendedAccountModal';
+import NotificationDropdown from '@/components/dashboard/NotificationDropdown';
 
 interface SupplierLayoutProps {
   children: React.ReactNode;
@@ -66,6 +68,7 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
 
   const navItems = [
     { name: t.dashboard.supplierNav.overview, href: '/dashboard/supplier', icon: LayoutDashboard },
+    { name: 'Host Events & Leads', href: '/dashboard/supplier/leads', icon: Sparkles, badge: 'Marketplace' },
     { name: t.dashboard.supplierNav.profile, href: '/dashboard/supplier/profile', icon: Store },
     { name: t.dashboard.supplierNav.portfolio, href: '/dashboard/supplier/portfolio', icon: ImageIcon },
     { name: t.dashboard.supplierNav.services, href: '/dashboard/supplier/services', icon: DollarSign },
@@ -378,6 +381,8 @@ export default function SupplierLayout({ children }: SupplierLayoutProps) {
 
           <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
             <LanguageSwitcher variant="navbar" />
+
+            <NotificationDropdown role="supplier" />
 
             {isApproved ? (
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-soft-sm">

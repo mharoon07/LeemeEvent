@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -34,10 +35,29 @@ export default function SuspendedAccountModal({
 }: SuspendedAccountModalProps) {
   const router = useRouter();
   const { logout, user, checkSuspension } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  if (!mounted || !isOpen) return null;
 
   const handleReturnHome = async () => {
     try {
@@ -84,9 +104,23 @@ export default function SuspendedAccountModal({
   const isRejectedMode = mode === 'rejected';
   const isSuspendedMode = mode === 'suspended';
 
-  return (
-    <div className="fixed inset-0 z-[9999] bg-charcoal/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 select-none animate-in fade-in duration-300">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-200/80 relative overflow-hidden text-center animate-in zoom-in-95 duration-200">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[999999] w-screen h-screen min-h-[100dvh] bg-charcoal/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 select-none animate-in fade-in duration-300 overscroll-contain"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        minHeight: '100vh',
+        margin: 0,
+        zIndex: 999999,
+      }}
+    >
+      <div className="relative bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-200/80 overflow-hidden text-center animate-in zoom-in-95 duration-200 my-auto z-10">
         
         {/* Top Accent Bar */}
         <div
@@ -252,6 +286,7 @@ export default function SuspendedAccountModal({
           Account Email: <span className="font-mono">{user?.email || 'N/A'}</span>
         </p>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

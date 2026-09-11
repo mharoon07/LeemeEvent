@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -36,6 +37,7 @@ export default function CombinedRequestModal({
   initialSearchState,
 }: CombinedRequestModalProps) {
   const { t } = useLanguage();
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([
@@ -71,11 +73,33 @@ export default function CombinedRequestModal({
     notes: '',
   });
 
-  const toggleCategory = (id: string) => {
-    if (selectedCategories.includes(id)) {
-      setSelectedCategories(selectedCategories.filter((c) => c !== id));
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
     } else {
-      setSelectedCategories([...selectedCategories, id]);
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  if (!mounted || !isOpen) return null;
+
+  const toggleCategory = (catId: string) => {
+    if (selectedCategories.includes(catId)) {
+      if (selectedCategories.length > 1) {
+        setSelectedCategories(selectedCategories.filter((c) => c !== catId));
+      }
+    } else {
+      setSelectedCategories([...selectedCategories, catId]);
     }
   };
 
@@ -90,18 +114,30 @@ export default function CombinedRequestModal({
     onClose();
   };
 
-  if (!isOpen) return null;
-
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div
+        className="fixed inset-0 z-[999999] w-screen h-screen min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 overflow-y-auto overscroll-contain"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          minHeight: '100vh',
+          margin: 0,
+          zIndex: 999999,
+        }}
+      >
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={resetAndClose}
-          className="fixed inset-0 bg-charcoal/80 backdrop-blur-md"
+          className="fixed inset-0 bg-charcoal/90 backdrop-blur-md"
         />
 
         {/* Modal Card */}
@@ -110,7 +146,7 @@ export default function CombinedRequestModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-2xl bg-sand border border-taupe/30 rounded-3xl p-6 sm:p-8 shadow-soft-lg z-10 overflow-hidden"
+          className="relative w-full max-w-2xl bg-sand border border-taupe/30 rounded-3xl p-6 sm:p-8 shadow-soft-lg z-10 overflow-hidden my-auto"
         >
           {/* Close button */}
           <button
@@ -312,6 +348,7 @@ export default function CombinedRequestModal({
           )}
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

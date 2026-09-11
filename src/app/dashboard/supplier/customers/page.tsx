@@ -9,7 +9,6 @@ import {
   Calendar,
   MapPin,
   Mail,
-  Phone,
   DollarSign,
   Search,
   Sparkles,
@@ -45,8 +44,7 @@ export default function SupplierCustomersPage() {
     const q = searchQuery.toLowerCase();
     return (
       c.full_name?.toLowerCase().includes(q) ||
-      c.email?.toLowerCase().includes(q) ||
-      c.phone?.toLowerCase().includes(q)
+      c.email?.toLowerCase().includes(q)
     );
   });
 
@@ -104,7 +102,7 @@ export default function SupplierCustomersPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search clients by name, email, or phone..."
+              placeholder="Search clients by name or email..."
               className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-9 pr-4 py-2 text-xs text-charcoal focus:outline-none focus:border-taupe"
             />
           </div>
@@ -149,12 +147,6 @@ export default function SupplierCustomersPage() {
                           {client.email}
                         </span>
                       </div>
-                      {client.phone && (
-                        <span className="flex items-center gap-1 text-[11px] text-stone-400 mt-0.5">
-                          <Phone className="w-3 h-3 text-taupe" />
-                          {client.phone}
-                        </span>
-                      )}
                     </div>
                   </div>
 

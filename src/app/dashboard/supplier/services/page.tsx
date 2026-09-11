@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import SupplierLayout from '@/components/dashboard/SupplierLayout';
 import { useAuth } from '@/context/AuthContext';
 import {
   supplierPortalApi,
   mediaApi,
   encodeServiceDescription,
-  decodeServiceDescription
+  decodeServiceDescription,
+  notificationsApi
 } from '@/lib/services/consumerApi';
 import { SupplierService } from '@/types/api';
 import {
@@ -47,6 +49,7 @@ const DEFAULT_SERVICE_IMAGES: Record<string, string> = {
 
 export default function SupplierServicesPage() {
   const { user } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [services, setServices] = useState<SupplierService[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,8 +91,24 @@ export default function SupplierServicesPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     loadServices();
   }, []);
+
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [isModalOpen]);
 
   const handleOpenAddModal = () => {
     setEditingService(null);
@@ -206,6 +225,14 @@ export default function SupplierServicesPage() {
         await supplierPortalApi.updateService(editingService.id, payload);
       } else {
         await supplierPortalApi.createService(payload);
+        // Trigger Host Notification about new service package
+        notificationsApi.addNotification('host', {
+          type: 'new_service',
+          title: `New Service: ${formData.name.trim()}`,
+          description: `${user?.name || 'Verified Supplier'} published a new event service starting at €${formData.base_price}.`,
+          link: '/explore',
+          metadata: { service_name: formData.name.trim(), price: formData.base_price }
+        });
       }
 
       setIsModalOpen(false);
@@ -444,14 +471,26 @@ export default function SupplierServicesPage() {
         )}
 
         {/* WIDE RECTANGULAR STUDIO MODAL (MAX-W-4XL) */}
-        {isModalOpen && (
+        {mounted && isModalOpen && createPortal(
           <div
-            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+            className="fixed inset-0 z-[999999] w-screen h-screen min-h-[100dvh] bg-charcoal/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              minHeight: '100vh',
+              margin: 0,
+              zIndex: 999999,
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) setIsModalOpen(false);
             }}
           >
-            <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 z-10">
               {/* Modal Top Header Bar */}
               <div className="px-7 py-5 border-b border-stone-200 flex items-center justify-between bg-stone-50/90 shrink-0">
                 <div className="flex items-center gap-3">
@@ -628,51 +667,59 @@ export default function SupplierServicesPage() {
                       </div>
                     </div>
 
-                    {/* 3. Full Description & Included Inclusions */}
+                    {/* 3. Description */}
                     <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-xs font-bold text-charcoal uppercase tracking-wider">
-                          Description & Inclusions *
-                        </label>
-                        <span className="text-[10px] text-stone-400">Visible to all Event Hosts</span>
-                      </div>
+                      <label className="block text-xs font-bold text-charcoal uppercase tracking-wider mb-1.5">
+                        Description & Deliverables *
+                      </label>
                       <textarea
-                        rows={5}
+                        rows={4}
                         required
+                        placeholder="Describe what is included in this package: equipment, staff, ingredients, setup time, bespoke styling options, and guest capacity..."
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Detail everything included in this service: certified staff, specialized equipment, setup time, ingredients, presentation style, and luxury standards..."
-                        className="w-full px-4 py-3 rounded-xl border border-stone-200 text-xs text-charcoal leading-relaxed focus:outline-none focus:border-taupe bg-stone-50/50 shadow-soft-sm resize-none"
+                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:border-taupe bg-white resize-none leading-relaxed"
                       />
                     </div>
 
-                    {/* 4. Live Marketplace Visibility Checkbox */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <input
-                        type="checkbox"
-                        id="is_active_checkbox"
-                        checked={formData.is_active}
-                        onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                        className="w-4 h-4 rounded border-stone-300 text-taupe focus:ring-taupe cursor-pointer"
-                      />
-                      <label htmlFor="is_active_checkbox" className="text-xs font-semibold text-stone-700 cursor-pointer select-none">
-                        Publish immediately to live consumer marketplace feed
-                      </label>
+                    {/* Active Marketplace Listing Toggle */}
+                    <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-charcoal block">
+                          Publish in Consumer Marketplace
+                        </span>
+                        <span className="text-[11px] text-stone-500 block">
+                          When active, celebration hosts can browse, quote, and book this service.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                        className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 ${
+                          formData.is_active ? 'bg-charcoal' : 'bg-stone-300'
+                        }`}
+                      >
+                        <span
+                          className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+                            formData.is_active ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
                     </div>
                   </div>
                 </div>
 
                 {/* MODAL BOTTOM ACTION BAR */}
-                <div className="px-7 py-4 border-t border-stone-200 bg-stone-50/80 flex items-center justify-between shrink-0">
-                  <div className="text-xs text-stone-500 font-medium hidden sm:block">
-                    Changes save instantly to live database
-                  </div>
+                <div className="px-7 py-4 border-t border-stone-200 flex items-center justify-between bg-stone-50 shrink-0">
+                  <span className="text-xs text-stone-500 font-medium">
+                    * Required fields for verified marketplace listing
+                  </span>
 
-                  <div className="flex items-center gap-3 ml-auto">
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => setIsModalOpen(false)}
-                      className="px-5 py-2.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-600 hover:bg-stone-200/60 transition-colors"
+                      className="px-5 py-2.5 rounded-xl border border-stone-200 text-stone-600 hover:bg-white text-xs font-semibold transition-colors"
                     >
                       Cancel
                     </button>
@@ -697,7 +744,8 @@ export default function SupplierServicesPage() {
                 </div>
               </form>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </SupplierLayout>

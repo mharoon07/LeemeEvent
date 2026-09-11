@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
@@ -20,6 +21,7 @@ export default function AuthModal({
   const router = useRouter();
   const { login, signup, loginWithGoogle } = useAuth();
 
+  const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [userRole, setUserRole] = useState<'host' | 'supplier'>('host');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +36,23 @@ export default function AuthModal({
     rememberMe: true,
   });
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,16 +111,32 @@ export default function AuthModal({
     onClose();
   };
 
-  return (
+  if (!mounted || !isOpen) return null;
+
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div
+        className="fixed inset-0 z-[999999] w-screen h-screen min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 overflow-y-auto overscroll-contain"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          minHeight: '100vh',
+          margin: 0,
+          zIndex: 999999,
+        }}
+      >
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={resetAndClose}
-          className="fixed inset-0 bg-charcoal/80 backdrop-blur-md"
+          className="fixed inset-0 bg-charcoal/90 backdrop-blur-md"
         />
 
         {/* Modal Card */}
@@ -111,7 +145,7 @@ export default function AuthModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-lg bg-sand-50 border border-taupe/30 rounded-3xl p-6 sm:p-8 shadow-soft-lg z-10 overflow-hidden"
+          className="relative w-full max-w-lg bg-sand-50 border border-taupe/30 rounded-3xl p-6 sm:p-8 shadow-soft-lg z-10 overflow-hidden my-auto"
         >
           {/* Close button */}
           <button
@@ -360,6 +394,7 @@ export default function AuthModal({
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

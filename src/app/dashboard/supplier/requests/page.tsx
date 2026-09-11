@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import SupplierLayout from '@/components/dashboard/SupplierLayout';
-import { supplierBookingsApi } from '@/lib/services/consumerApi';
+import { supplierBookingsApi, notificationsApi } from '@/lib/services/consumerApi';
 import {
   Inbox,
   CheckCircle2,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react';
 
 export default function SupplierRequestsPage() {
+  const [mounted, setMounted] = useState(false);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'accepted' | 'completed' | 'rejected'>('all');
@@ -37,6 +39,25 @@ export default function SupplierRequestsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (activeModalRequest) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [activeModalRequest]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -74,6 +95,18 @@ export default function SupplierRequestsPage() {
     loadRequests();
   }, []);
 
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (Boolean(activeModalRequest)) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [activeModalRequest]);
+
   const handleOpenActionModal = (request: any, action: 'accept' | 'reject' | 'mark_done') => {
     setActiveModalRequest(request);
     setModalAction(action);
@@ -101,6 +134,16 @@ export default function SupplierRequestsPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem(`LEEMEVENTS_BOOKING_STATUS_${targetId}`, 'completed');
     }
+
+    // Trigger Host Notification
+    const celebrationTitle = req?.event?.title || req?.service?.name || 'Celebration';
+    notificationsApi.addNotification('host', {
+      type: 'event_completed',
+      title: 'Event Completed! ⭐',
+      description: `Supplier marked "${celebrationTitle}" as completed. Please submit your review and rating.`,
+      link: '/dashboard/host/requests',
+      metadata: { booking_id: targetId, event_id: req?.event?.id }
+    });
 
     showToast('✨ Event successfully marked as Completed! Host can now submit their verified review.');
 
@@ -132,6 +175,16 @@ export default function SupplierRequestsPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem(`LEEMEVENTS_BOOKING_STATUS_${targetId}`, 'accepted');
     }
+
+    // Trigger Host Notification
+    const celebrationTitle = req?.event?.title || req?.service?.name || 'Celebration';
+    notificationsApi.addNotification('host', {
+      type: 'booking_accepted',
+      title: 'Booking Request Confirmed! 🎉',
+      description: `Supplier confirmed availability for "${celebrationTitle}". Check your itinerary.`,
+      link: '/dashboard/host/requests',
+      metadata: { booking_id: targetId, event_id: req?.event?.id }
+    });
 
     showToast('✓ Booking Accepted! You can now click "Mark as Done" once event services are delivered.');
 
@@ -167,6 +220,26 @@ export default function SupplierRequestsPage() {
 
     if (typeof window !== 'undefined') {
       localStorage.setItem(`LEEMEVENTS_BOOKING_STATUS_${targetId}`, targetStatus);
+    }
+
+    // Trigger Host notification
+    const celebrationTitle = activeModalRequest?.event?.title || activeModalRequest?.service?.name || 'Celebration';
+    if (targetStatus === 'completed') {
+      notificationsApi.addNotification('host', {
+        type: 'event_completed',
+        title: 'Event Completed! ⭐',
+        description: `Supplier finished delivery for "${celebrationTitle}". You can now leave a verified review.`,
+        link: '/dashboard/host/requests',
+        metadata: { booking_id: targetId }
+      });
+    } else if (targetStatus === 'accepted') {
+      notificationsApi.addNotification('host', {
+        type: 'booking_accepted',
+        title: 'Booking Confirmed! 🎉',
+        description: `Supplier approved your booking for "${celebrationTitle}".`,
+        link: '/dashboard/host/requests',
+        metadata: { booking_id: targetId }
+      });
     }
 
     try {
@@ -497,14 +570,26 @@ export default function SupplierRequestsPage() {
         )}
 
         {/* ACCEPT / REJECT / MARK DONE CONFIRMATION MODAL */}
-        {activeModalRequest && (
+        {mounted && activeModalRequest && createPortal(
           <div
-            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 z-[999999] w-screen h-screen min-h-[100dvh] bg-charcoal/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              minHeight: '100vh',
+              margin: 0,
+              zIndex: 999999,
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) setActiveModalRequest(null);
             }}
           >
-            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-150">
+            <div className="relative bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-150 my-auto z-10">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                 <div className="flex items-center gap-2.5">
                   {modalAction === 'accept' ? (
@@ -591,7 +676,8 @@ export default function SupplierRequestsPage() {
                 </div>
               </form>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </SupplierLayout>

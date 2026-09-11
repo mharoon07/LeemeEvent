@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
 import HostLayout from '@/components/dashboard/HostLayout';
@@ -39,7 +40,16 @@ import {
 import { api } from '@/lib/api';
 import SupplierPortfolioModal from '@/components/SupplierPortfolioModal';
 
+const BOOKING_PRESET_TAGS = [
+  '💍 Wedding Celebration',
+  '🍸 Cocktail & Bar',
+  '🍽️ Dinner & Catering',
+  '✨ Full Day Coordination',
+  '📸 Photography Coverage',
+];
+
 export default function BrowseSuppliersPage() {
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'services' | 'suppliers'>('services');
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -80,6 +90,38 @@ export default function BrowseSuppliersPage() {
     guest_count: 120,
     requirements: 'Interested in reserving package services for our luxury celebration.',
   });
+
+  // Client side mounting flag for Portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevent background scroll when any modal is open
+  const isAnyModalOpen = Boolean(selectedServiceForBooking || isBroadcastModalOpen);
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      if (originalPaddingRight > 0) {
+        document.body.style.paddingRight = `${originalPaddingRight}px`;
+      }
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          if (selectedServiceForBooking) setSelectedServiceForBooking(null);
+          if (isBroadcastModalOpen) setIsBroadcastModalOpen(false);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isAnyModalOpen, selectedServiceForBooking, isBroadcastModalOpen]);
 
   const loadData = async () => {
     setLoading(true);
@@ -627,327 +669,418 @@ export default function BrowseSuppliersPage() {
           </>
         )}
 
-        {/* DIRECT SERVICE BOOKING MODAL */}
-        {selectedServiceForBooking && (
-          <div
-            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setSelectedServiceForBooking(null);
-            }}
-          >
-            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-200 relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto my-auto">
-              <button
-                type="button"
-                onClick={() => setSelectedServiceForBooking(null)}
-                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors"
+        {/* FULL 100VH DIRECT SERVICE BOOKING REACT PORTAL MODAL */}
+        {mounted &&
+          selectedServiceForBooking &&
+          createPortal(
+            <div
+              className="fixed inset-0 z-[999999] w-screen h-[100dvh] min-h-screen bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain"
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100vw',
+                height: '100vh',
+                minHeight: '100vh',
+                margin: 0,
+                zIndex: 999999,
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setSelectedServiceForBooking(null);
+              }}
+            >
+              <div
+                className="relative bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 z-10"
+                onClick={(e) => e.stopPropagation()}
               >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="mb-6">
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-taupe uppercase tracking-wider mb-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Protected Escrow Booking Request</span>
-                </div>
-                <h2 className="text-2xl font-bold text-charcoal">{selectedServiceForBooking.name}</h2>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  by <span className="font-bold text-charcoal">{selectedServiceForBooking.supplier?.business_name || 'Verified Supplier'}</span> • €{Number(selectedServiceForBooking.base_price).toLocaleString()}
-                </p>
-              </div>
-
-              {bookingSuccess ? (
-                <div className="space-y-5 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-6 bg-gradient-to-br from-emerald-50 to-sand-50 border border-emerald-200/90 rounded-3xl text-center space-y-3 shadow-soft-sm">
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md">
-                      <CheckCircle2 className="w-8 h-8" />
+                {/* Modal Header */}
+                <div className="px-6 py-5 border-b border-stone-200/90 flex items-start justify-between bg-gradient-to-r from-stone-50 to-stone-100/60 shrink-0">
+                  <div className="space-y-1 pr-6">
+                    <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-taupe uppercase tracking-wider">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Protected Escrow Booking Request</span>
                     </div>
-                    <div>
-                      <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        Inquiry Live in Database
-                      </span>
-                      <h3 className="text-xl font-bold text-emerald-950 mt-2">Booking Inquiry Sent!</h3>
-                      <p className="text-xs text-stone-600 leading-relaxed max-w-sm mx-auto mt-1">
-                        Your request has been delivered to <strong>{selectedServiceForBooking.supplier?.business_name || 'the supplier'}</strong>. They can now review your dates, client details, and confirm availability.
+                    <h2 className="text-xl sm:text-2xl font-bold text-charcoal leading-tight">
+                      {selectedServiceForBooking.name}
+                    </h2>
+                    <p className="text-xs text-stone-500">
+                      by <span className="font-bold text-charcoal">{selectedServiceForBooking.supplier?.business_name || 'Verified Supplier'}</span> • €{Number(selectedServiceForBooking.base_price).toLocaleString()}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedServiceForBooking(null)}
+                    className="p-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors shrink-0"
+                    title="Close popup"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-6 overflow-y-auto flex-1">
+                  {bookingSuccess ? (
+                    <div className="space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="p-6 bg-gradient-to-br from-emerald-50 to-sand-50 border border-emerald-200/90 rounded-3xl text-center space-y-3 shadow-soft-sm">
+                        <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md">
+                          <CheckCircle2 className="w-8 h-8" />
+                        </div>
+                        <div>
+                          <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            Inquiry Live in Database
+                          </span>
+                          <h3 className="text-xl font-bold text-emerald-950 mt-2">Booking Inquiry Sent!</h3>
+                          <p className="text-xs text-stone-600 leading-relaxed max-w-sm mx-auto mt-1">
+                            Your request has been delivered to <strong>{selectedServiceForBooking.supplier?.business_name || 'the supplier'}</strong>. They can now review your dates, client details, and confirm availability.
+                          </p>
+                        </div>
+
+                        {/* Booking Review Summary Receipt */}
+                        <div className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-stone-200/80 text-left space-y-2.5 text-xs shadow-sm">
+                          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+                            <span className="text-stone-500 font-medium">Requested Service:</span>
+                            <span className="font-bold text-charcoal">{selectedServiceForBooking.name}</span>
+                          </div>
+                          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+                            <span className="text-stone-500 font-medium">Event Date:</span>
+                            <span className="font-bold text-charcoal font-mono">{bookingForm.requested_date || 'Date TBD'}</span>
+                          </div>
+                          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+                            <span className="text-stone-500 font-medium">Guests / Attendees:</span>
+                            <span className="font-bold text-charcoal">{bookingForm.guest_count || 50} guests</span>
+                          </div>
+                          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+                            <span className="text-stone-500 font-medium">Total Package Rate:</span>
+                            <span className="font-bold text-taupe font-mono text-sm">€{Number(selectedServiceForBooking.base_price).toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-stone-500 font-medium">Escrow Deposit (20%):</span>
+                            <span className="font-bold text-emerald-700 font-mono text-sm">
+                              €{(((Number(selectedServiceForBooking.base_price) || 1500) * 20) / 100).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBookingSuccess(false);
+                            setSelectedServiceForBooking(null);
+                          }}
+                          className="flex-1 py-3 rounded-2xl border border-stone-200 text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors"
+                        >
+                          Continue Browsing
+                        </button>
+                        <Link
+                          href="/dashboard/host/requests"
+                          className="flex-1 py-3 rounded-2xl bg-charcoal hover:bg-taupe text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-soft-sm"
+                        >
+                          <span>View My Requests</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleDirectServiceBooking} className="space-y-4">
+                      {events.length > 0 && (
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                            Select Your Active Celebration
+                          </label>
+                          <select
+                            value={bookingForm.event_id}
+                            onChange={(e) => setBookingForm({ ...bookingForm, event_id: e.target.value })}
+                            className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                          >
+                            {events.map((ev) => (
+                              <option key={ev.id} value={ev.id}>
+                                🎉 {ev.title} ({ev.city || 'City'})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                            Requested Date *
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            min={new Date().toISOString().split('T')[0]}
+                            value={bookingForm.requested_date}
+                            onChange={(e) => setBookingForm({ ...bookingForm, requested_date: e.target.value })}
+                            className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                            Guest Count
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            value={bookingForm.guest_count}
+                            onChange={(e) => setBookingForm({ ...bookingForm, guest_count: Number(e.target.value) })}
+                            className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-stone-600">
+                            Bespoke Notes / Preferences
+                          </label>
+                          <span className="text-[11px] text-stone-400">Quick suggestions:</span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {BOOKING_PRESET_TAGS.map((tag) => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => {
+                                if (bookingForm.requirements) {
+                                  setBookingForm({
+                                    ...bookingForm,
+                                    requirements: `${bookingForm.requirements} | ${tag}`,
+                                  });
+                                } else {
+                                  setBookingForm({
+                                    ...bookingForm,
+                                    requirements: tag,
+                                  });
+                                }
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-[11px] font-medium transition-colors border border-stone-200/80"
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+
+                        <textarea
+                          rows={3}
+                          value={bookingForm.requirements}
+                          onChange={(e) => setBookingForm({ ...bookingForm, requirements: e.target.value })}
+                          placeholder="Specify timing, theme, or any particular questions..."
+                          className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 text-xs text-charcoal focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50 resize-none"
+                        />
+                      </div>
+
+                      <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/80 flex items-center justify-between text-xs">
+                        <div>
+                          <span className="text-stone-500 block">Package Price</span>
+                          <span className="font-bold text-charcoal font-mono text-sm">
+                            €{Number(selectedServiceForBooking.base_price).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-stone-500 block">Required Escrow Deposit (20%)</span>
+                          <span className="font-bold text-emerald-700 font-mono text-sm">
+                            €{(((Number(selectedServiceForBooking.base_price) || 1500) * 20) / 100).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 flex items-center justify-end gap-3 border-t border-stone-100">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedServiceForBooking(null)}
+                          className="px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={bookingSubmitting}
+                          className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 shadow-soft-sm disabled:opacity-50"
+                        >
+                          {bookingSubmitting ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Delivering Inquiry...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Send Booking Request</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+
+        {/* FULL 100VH BROADCAST INQUIRY REACT PORTAL MODAL */}
+        {mounted &&
+          isBroadcastModalOpen &&
+          createPortal(
+            <div
+              className="fixed inset-0 z-[999999] w-screen h-[100dvh] min-h-screen bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain"
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100vw',
+                height: '100vh',
+                minHeight: '100vh',
+                margin: 0,
+                zIndex: 999999,
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setIsBroadcastModalOpen(false);
+              }}
+            >
+              <div
+                className="relative bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 z-10"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div className="px-6 py-5 border-b border-stone-200/90 flex items-start justify-between bg-gradient-to-r from-stone-50 to-stone-100/60 shrink-0">
+                  <div className="space-y-1 pr-6">
+                    <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-taupe uppercase tracking-wider">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Broadcast Inquiries</span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-charcoal leading-tight">
+                      Broadcast Quote Request
+                    </h2>
+                    <p className="text-xs text-stone-500">
+                      Simultaneously request personalized packages from {selectedSupplierIds.length} chosen suppliers.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsBroadcastModalOpen(false)}
+                    className="p-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors shrink-0"
+                    title="Close popup"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-6 overflow-y-auto flex-1">
+                  {broadcastSuccess ? (
+                    <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-3xl text-center space-y-3 shadow-soft-sm animate-in fade-in">
+                      <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
+                      <h3 className="text-base font-bold text-emerald-900">Broadcast Sent Successfully!</h3>
+                      <p className="text-xs text-emerald-700 max-w-sm mx-auto">
+                        Your request was delivered to {selectedSupplierIds.length} partners. Check real-time statuses in your Requests Tab.
                       </p>
                     </div>
+                  ) : (
+                    <form onSubmit={handleSendBroadcast} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                            Event Date *
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            min={new Date().toISOString().split('T')[0]}
+                            value={broadcastForm.event_date}
+                            onChange={(e) =>
+                              setBroadcastForm({ ...broadcastForm, event_date: e.target.value })
+                            }
+                            className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                            City / Location *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={broadcastForm.city}
+                            onChange={(e) =>
+                              setBroadcastForm({ ...broadcastForm, city: e.target.value })
+                            }
+                            className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                          />
+                        </div>
+                      </div>
 
-                    {/* Booking Review Summary Receipt */}
-                    <div className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl border border-stone-200/80 text-left space-y-2.5 text-xs shadow-sm">
-                      <div className="flex items-center justify-between pb-2 border-b border-stone-100">
-                        <span className="text-stone-500 font-medium">Requested Service:</span>
-                        <span className="font-bold text-charcoal">{selectedServiceForBooking.name}</span>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                          Guest Count
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={broadcastForm.guest_count}
+                          onChange={(e) =>
+                            setBroadcastForm({ ...broadcastForm, guest_count: Number(e.target.value) })
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50"
+                        />
                       </div>
-                      <div className="flex items-center justify-between pb-2 border-b border-stone-100">
-                        <span className="text-stone-500 font-medium">Event Date:</span>
-                        <span className="font-bold text-charcoal font-mono">{bookingForm.requested_date || 'Date TBD'}</span>
-                      </div>
-                      <div className="flex items-center justify-between pb-2 border-b border-stone-100">
-                        <span className="text-stone-500 font-medium">Guests / Attendees:</span>
-                        <span className="font-bold text-charcoal">{bookingForm.guest_count || 50} guests</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-stone-500 font-medium">Total Package Rate:</span>
-                        <span className="font-bold text-taupe font-mono text-sm">€{Number(selectedServiceForBooking.base_price).toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBookingSuccess(false);
-                        setSelectedServiceForBooking(null);
-                      }}
-                      className="flex-1 py-3 rounded-2xl border border-stone-200 text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors"
-                    >
-                      Continue Browsing
-                    </button>
-                    <Link
-                      href="/dashboard/host/requests"
-                      className="flex-1 py-3 rounded-2xl bg-charcoal hover:bg-taupe text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-soft-sm"
-                    >
-                      <span>View My Requests</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleDirectServiceBooking} className="space-y-4">
-                  {events.length > 0 && (
-                    <div>
-                      <label className="block text-xs font-semibold text-stone-700 mb-1">
-                        Select Your Active Celebration
-                      </label>
-                      <select
-                        value={bookingForm.event_id}
-                        onChange={(e) => setBookingForm({ ...bookingForm, event_id: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe bg-white"
-                      >
-                        {events.map((ev) => (
-                          <option key={ev.id} value={ev.id}>
-                            🎉 {ev.title} ({ev.city || 'City'})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                          Custom Requirements / Notes
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={broadcastForm.requirements}
+                          onChange={(e) =>
+                            setBroadcastForm({ ...broadcastForm, requirements: e.target.value })
+                          }
+                          placeholder="Describe styling themes, dietary preferences, or specific timings..."
+                          className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-200 text-xs text-charcoal focus:outline-none focus:ring-2 focus:ring-taupe bg-stone-50/50 resize-none"
+                        />
+                      </div>
+
+                      <div className="pt-4 flex items-center justify-end gap-3 border-t border-stone-100">
+                        <button
+                          type="button"
+                          onClick={() => setIsBroadcastModalOpen(false)}
+                          className="px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={broadcastSubmitting}
+                          className="btn-primary px-6 py-2.5 text-xs font-bold flex items-center gap-2 shadow-soft-sm disabled:opacity-50"
+                        >
+                          {broadcastSubmitting ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Sending Inquiries...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Broadcast Inquiries</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
                   )}
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-stone-700 mb-1">
-                        Requested Date *
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={bookingForm.requested_date}
-                        onChange={(e) => setBookingForm({ ...bookingForm, requested_date: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-stone-700 mb-1">
-                        Guest Count
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={bookingForm.guest_count}
-                        onChange={(e) => setBookingForm({ ...bookingForm, guest_count: Number(e.target.value) })}
-                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Bespoke Notes / Preferences
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={bookingForm.requirements}
-                      onChange={(e) => setBookingForm({ ...bookingForm, requirements: e.target.value })}
-                      placeholder="Specify timing, theme, or any particular questions..."
-                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-
-                  <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200/80 flex items-center justify-between text-xs">
-                    <div>
-                      <span className="text-stone-500 block">Package Price</span>
-                      <span className="font-bold text-charcoal font-mono text-sm">€{Number(selectedServiceForBooking.base_price).toLocaleString()}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-stone-500 block">Required Escrow Deposit (20%)</span>
-                      <span className="font-bold text-emerald-700 font-mono text-sm">
-                        €{(((Number(selectedServiceForBooking.base_price) || 1500) * 20) / 100).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-end gap-3 border-t border-stone-100">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedServiceForBooking(null)}
-                      className="px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={bookingSubmitting}
-                      className="btn-primary px-5 py-2.5 text-xs font-bold flex items-center gap-2"
-                    >
-                      {bookingSubmitting ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Delivering Inquiry...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Send Booking Request</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* BROADCAST INQUIRY MODAL */}
-        {isBroadcastModalOpen && (
-          <div
-            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setIsBroadcastModalOpen(false);
-            }}
-          >
-            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-200 relative animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto my-auto">
-              <button
-                type="button"
-                onClick={() => setIsBroadcastModalOpen(false)}
-                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="mb-6">
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-taupe uppercase tracking-wider mb-1">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Broadcast Inquiries</span>
                 </div>
-                <h2 className="text-2xl font-bold text-charcoal">Broadcast Quote Request</h2>
-                <p className="text-xs text-stone-500 mt-1">
-                  Simultaneously request personalized packages from {selectedSupplierIds.length} chosen suppliers.
-                </p>
               </div>
-
-              {broadcastSuccess ? (
-                <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2">
-                  <Check className="w-8 h-8 text-emerald-600 mx-auto" />
-                  <h3 className="text-base font-bold text-emerald-800">Broadcast Sent Successfully!</h3>
-                  <p className="text-xs text-emerald-700">
-                    Your request was delivered to {selectedSupplierIds.length} partners. Check status in your Requests Tab.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleSendBroadcast} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-stone-700 mb-1">
-                        Event Date *
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={broadcastForm.event_date}
-                        onChange={(e) =>
-                          setBroadcastForm({ ...broadcastForm, event_date: e.target.value })
-                        }
-                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-stone-700 mb-1">
-                        City / Location *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={broadcastForm.city}
-                        onChange={(e) =>
-                          setBroadcastForm({ ...broadcastForm, city: e.target.value })
-                        }
-                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Guest Count
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={broadcastForm.guest_count}
-                      onChange={(e) =>
-                        setBroadcastForm({ ...broadcastForm, guest_count: Number(e.target.value) })
-                      }
-                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Custom Requirements / Notes
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={broadcastForm.requirements}
-                      onChange={(e) =>
-                        setBroadcastForm({ ...broadcastForm, requirements: e.target.value })
-                      }
-                      placeholder="Describe styling themes, dietary preferences, or specific timings..."
-                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-taupe"
-                    />
-                  </div>
-
-                  <div className="pt-4 flex items-center justify-end gap-3 border-t border-stone-100">
-                    <button
-                      type="button"
-                      onClick={() => setIsBroadcastModalOpen(false)}
-                      className="px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={broadcastSubmitting}
-                      className="btn-primary px-5 py-2.5 text-xs font-bold flex items-center gap-2"
-                    >
-                      {broadcastSubmitting ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Sending Inquiries...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Broadcast Inquiries</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        )}
+            </div>,
+            document.body
+          )}
 
         {/* SUPPLIER PORTFOLIO PREVIEW MODAL */}
         <SupplierPortfolioModal
@@ -960,3 +1093,4 @@ export default function BrowseSuppliersPage() {
     </HostLayout>
   );
 }
+

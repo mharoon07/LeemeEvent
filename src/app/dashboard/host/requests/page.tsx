@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
 import HostLayout from '@/components/dashboard/HostLayout';
 import {
   bookingsApi,
   normalizeCategory,
-  decodeServiceDescription
+  decodeServiceDescription,
+  notificationsApi
 } from '@/lib/services/consumerApi';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -38,6 +40,7 @@ import SupplierPortfolioModal from '@/components/SupplierPortfolioModal';
 
 export default function HostRequestsPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const [mounted, setMounted] = useState<boolean>(false);
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -60,6 +63,65 @@ export default function HostRequestsPage() {
   const [reviewComment, setReviewComment] = useState<string>('');
   const [reviewSubmitting, setReviewSubmitting] = useState<boolean>(false);
   const [reviewSuccessMsg, setReviewSuccessMsg] = useState<string | null>(null);
+
+  // Proposal Actions & Toast
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 4000);
+  };
+
+  const handleAcceptProposal = async (req: any) => {
+    setAcceptingId(req.id);
+    setRequests((prev) =>
+      prev.map((r) => (r.id === req.id ? { ...r, status: 'accepted' } : r))
+    );
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`LEEMEVENTS_BOOKING_STATUS_${req.id}`, 'accepted');
+    }
+    showToast('🎉 Proposal Accepted! Booking is confirmed. You can now pay the 20% escrow deposit or message the supplier.');
+
+    try {
+      notificationsApi.addNotification('supplier', {
+        title: `🏆 Proposal Accepted by ${user?.name || 'Host'}!`,
+        desc: `Congratulations! Your quote for "${req.event?.title || 'Celebration'}" was accepted. Escrow deposit registered.`,
+        type: 'booking',
+        link: '/dashboard/supplier/requests',
+        metadata: { booking_id: req.id },
+      });
+    } catch {}
+
+    try {
+      await bookingsApi.updateStatus(req.id, 'accepted', 'Proposal accepted by Host');
+    } catch (err) {
+      console.warn('Backend accept notice:', err);
+    } finally {
+      setAcceptingId(null);
+      loadRequests();
+    }
+  };
+
+  const handleDeclineProposal = async (req: any) => {
+    if (!confirm('Are you sure you want to decline this supplier proposal?')) return;
+    setAcceptingId(req.id);
+    setRequests((prev) =>
+      prev.map((r) => (r.id === req.id ? { ...r, status: 'declined' } : r))
+    );
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`LEEMEVENTS_BOOKING_STATUS_${req.id}`, 'declined');
+    }
+    showToast('Proposal declined.');
+    try {
+      await bookingsApi.updateStatus(req.id, 'declined', 'Proposal declined by Host');
+    } catch (err) {
+      console.warn('Backend decline notice:', err);
+    } finally {
+      setAcceptingId(null);
+      loadRequests();
+    }
+  };
 
   const loadRequests = async () => {
     try {
@@ -90,6 +152,26 @@ export default function HostRequestsPage() {
       loadRequests();
     }
   }, [user?.id, user?.email, authLoading]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock background scroll when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(cancelModalBooking || reviewModalBooking || isPortfolioModalOpen);
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [cancelModalBooking, reviewModalBooking, isPortfolioModalOpen]);
 
   const handleOpenCancelModal = (booking: any) => {
     setCancelModalBooking(booking);
@@ -157,6 +239,17 @@ export default function HostRequestsPage() {
         localStorage.setItem(`LEEMEVENTS_BOOKING_STATUS_${reviewModalBooking.id}`, 'completed');
       }
 
+      // Trigger notification for supplier
+      try {
+        notificationsApi.addNotification('supplier', {
+          title: `★ New ${ratingQuality}.0-Star Verified Review!`,
+          desc: `${user?.name || 'A client'} rated your service: "${reviewComment.slice(0, 60)}..."`,
+          type: 'review',
+          link: '/dashboard/supplier/reviews',
+          metadata: { booking_id: reviewModalBooking.id, rating: ratingQuality },
+        });
+      } catch {}
+
       setRequests((prev) =>
         prev.map((r) =>
           r.id === reviewModalBooking.id ? { ...r, is_reviewed: true, status: 'completed' } : r
@@ -208,51 +301,109 @@ export default function HostRequestsPage() {
 
   const filtered = requests.filter((r) => {
     if (filterStatus === 'All') return true;
+    if (filterStatus === '⚡ Supplier Proposals') {
+      return r.source === 'supplier_pitch' || Boolean(r.supplier_pitch_notes);
+    }
     const norm = getNormalizedStatus(r.status);
     return norm.toLowerCase() === filterStatus.toLowerCase();
   });
 
+  const proposalCount = requests.filter(
+    (r) => r.source === 'supplier_pitch' || Boolean(r.supplier_pitch_notes)
+  ).length;
+  const pendingCount = requests.filter((r) => getNormalizedStatus(r.status) === 'Pending').length;
+  const acceptedCount = requests.filter((r) => getNormalizedStatus(r.status) === 'Accepted').length;
+  const depositCount = requests.filter((r) => getNormalizedStatus(r.status) === 'Deposit Paid').length;
+  const completedCount = requests.filter((r) => getNormalizedStatus(r.status) === 'Completed').length;
+  const declinedCount = requests.filter((r) => getNormalizedStatus(r.status) === 'Declined').length;
+  const cancelledCount = requests.filter((r) => getNormalizedStatus(r.status) === 'Cancelled').length;
+
+  const filterTabs = [
+    { id: 'All', label: 'All', count: requests.length },
+    { id: '⚡ Supplier Proposals', label: '⚡ Supplier Proposals', count: proposalCount, highlight: true },
+    { id: 'Pending', label: 'Pending', count: pendingCount },
+    { id: 'Accepted', label: 'Accepted', count: acceptedCount },
+    { id: 'Deposit Paid', label: 'Deposit Paid', count: depositCount },
+    { id: 'Completed', label: 'Completed', count: completedCount },
+    { id: 'Declined', label: 'Declined', count: declinedCount },
+    { id: 'Cancelled', label: 'Cancelled', count: cancelledCount },
+  ];
+
   return (
     <HostLayout>
-      <div className="space-y-8 max-w-6xl mx-auto pb-16">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-200/80">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-taupe uppercase tracking-wider mb-1">
+      <div className="space-y-6 max-w-6xl mx-auto pb-16">
+        {/* Toast Notification */}
+        {toastMsg && (
+          <div className="fixed top-20 right-6 z-50 bg-charcoal text-sand px-5 py-3 rounded-2xl shadow-2xl border border-taupe/40 flex items-center gap-3 animate-in slide-in-from-top-4 duration-200">
+            <Sparkles className="w-5 h-5 text-amber-300 shrink-0" />
+            <span className="text-xs font-semibold">{toastMsg}</span>
+          </div>
+        )}
+
+        {/* Clean Responsive Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-taupe/15 text-taupe text-[11px] font-bold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Host Inquiries & Booking Engine</span>
+              <span>Host Inquiries & Proposal Management</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-charcoal tracking-tight">
-              Booking Requests & Quotes
+              Booking Requests & Supplier Pitches
             </h1>
-            <p className="text-xs sm:text-sm text-stone-500 mt-1">
-              Track your service inquiries, vendor response notes, lock in bookings via Escrow, or manage cancellations.
+            <p className="text-xs sm:text-sm text-stone-500 max-w-2xl">
+              Review direct service inquiries and proposals received from verified suppliers for your celebrations.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
+            <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-stone-100 text-stone-700 text-xs font-semibold border border-stone-200">
+              <Package className="w-4 h-4 text-taupe" />
+              <span>{requests.length} Total Requests</span>
+            </div>
             <button
               onClick={loadRequests}
-              className="p-3 rounded-2xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors"
+              className="p-2.5 rounded-xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors shadow-soft-sm flex items-center gap-2 text-xs font-semibold"
               title="Refresh Inquiries"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden md:inline">Refresh</span>
             </button>
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {['All', 'Pending', 'Accepted', 'Completed', 'Deposit Paid', 'Declined', 'Cancelled'].map((st) => (
+          </div>
+        </div>
+
+        {/* Dedicated Responsive Filter Toolbar */}
+        <div className="bg-white border border-stone-200/90 rounded-2xl p-2 sm:p-2.5 shadow-soft-sm">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 px-0.5">
+            {filterTabs.map((tab) => {
+              const isSelected = filterStatus === tab.id;
+              return (
                 <button
-                  key={st}
-                  onClick={() => setFilterStatus(st)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
-                    filterStatus === st
+                  key={tab.id}
+                  onClick={() => setFilterStatus(tab.id)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-2 shrink-0 ${
+                    isSelected
                       ? 'bg-charcoal text-white shadow-soft-sm'
-                      : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                      : tab.highlight
+                      ? 'bg-stone-100 border border-stone-300 text-charcoal hover:bg-stone-200'
+                      : 'bg-stone-50 border border-stone-200 text-stone-600 hover:bg-stone-100 hover:text-charcoal'
                   }`}
                 >
-                  {st}
+                  {tab.highlight && <Sparkles className="w-3.5 h-3.5 text-taupe" />}
+                  <span>{tab.label}</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      isSelected
+                        ? 'bg-white/20 text-white'
+                        : tab.highlight
+                        ? 'bg-amber-200/60 text-amber-950'
+                        : 'bg-stone-200 text-stone-700'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </div>
 
@@ -260,32 +411,42 @@ export default function HostRequestsPage() {
         {loading ? (
           <div className="py-20 text-center space-y-3">
             <div className="w-8 h-8 border-2 border-taupe border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs text-stone-500 font-medium">Syncing your personal booking requests...</p>
+            <p className="text-xs text-stone-500 font-medium">Syncing your booking requests & supplier proposals...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="bg-white border border-dashed border-stone-300 rounded-3xl p-12 text-center space-y-4 shadow-soft-sm">
             <div className="w-14 h-14 rounded-2xl bg-sand-100 text-taupe flex items-center justify-center mx-auto">
               <Package className="w-7 h-7 stroke-[1.5]" />
             </div>
-            <h3 className="font-bold text-charcoal text-base">No booking requests found</h3>
+            <h3 className="font-bold text-charcoal text-base">No booking requests or proposals found</h3>
             <p className="text-xs text-stone-500 max-w-sm mx-auto">
               {filterStatus !== 'All'
-                ? `No booking inquiries match the "${filterStatus}" filter.`
-                : 'You have not submitted any service inquiries under this account yet. Explore verified suppliers to book customized packages.'}
+                ? `No items match the "${filterStatus}" filter.`
+                : 'You have not received any supplier proposals or submitted inquiries yet.'}
             </p>
-            <Link
-              href="/dashboard/host/browse"
-              className="inline-flex items-center gap-2 btn-primary px-5 py-2.5 text-xs font-bold shadow-soft-sm hover:scale-[1.02] transition-transform"
-            >
-              <span>Browse Suppliers & Services</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Link
+                href="/dashboard/host/browse"
+                className="inline-flex items-center gap-2 btn-primary px-5 py-2.5 text-xs font-bold shadow-soft-sm hover:scale-[1.02] transition-transform"
+              >
+                <span>Browse Marketplace</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                href="/dashboard/host/events"
+                className="inline-flex items-center gap-2 btn-secondary px-5 py-2.5 text-xs font-bold hover:bg-stone-100 transition-colors"
+              >
+                <span>My Celebrations</span>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-5">
             {filtered.map((req) => {
               const normStatus = getNormalizedStatus(req.status);
               const badgeClass = getStatusBadge(normStatus);
+              const isPitch = req.source === 'supplier_pitch' || Boolean(req.supplier_pitch_notes);
+              const isAccepting = acceptingId === req.id;
 
               // Extract Service details
               const service = req.service;
@@ -294,7 +455,7 @@ export default function HostRequestsPage() {
               const supplier = req.supplier || service?.supplier;
               const supplierName = supplier?.business_name || supplier?.name || 'Verified Supplier Partner';
               const supplierCategory = normalizeCategory(supplier?.category || supplier?.category_id || 'Event Specialist');
-              const supplierCity = supplier?.city || req.event?.city || 'Madrid';
+              const supplierCity = supplier?.city || req.event?.city || 'Amsterdam';
 
               const displayImage =
                 serviceImg ||
@@ -309,13 +470,32 @@ export default function HostRequestsPage() {
                 ? new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                 : 'Recent';
 
-              const canCancel = normStatus === 'Pending' || normStatus === 'Accepted';
+              const canCancel = (normStatus === 'Pending' || normStatus === 'Accepted') && !isPitch;
 
               return (
                 <div
                   key={req.id}
-                  className="bg-white border border-stone-200/90 rounded-3xl p-6 transition-all duration-300 shadow-soft-sm hover:border-taupe/40 hover:shadow-soft-md space-y-5"
+                  className={`bg-white border rounded-3xl p-6 transition-all duration-300 shadow-soft-sm hover:shadow-soft-md space-y-5 ${
+                    isPitch && normStatus === 'Pending'
+                      ? 'border-amber-300/90 ring-1 ring-amber-400/20 bg-amber-50/10'
+                      : normStatus === 'Accepted'
+                      ? 'border-emerald-200/90 ring-1 ring-emerald-500/15'
+                      : 'border-stone-200/90'
+                  }`}
                 >
+                  {/* Pitch Highlight Tag if sent by supplier */}
+                  {isPitch && (
+                    <div className="flex items-center justify-between bg-gradient-to-r from-amber-100/90 via-amber-50 to-sand-50 px-4 py-2 rounded-2xl border border-amber-200 text-xs font-bold text-amber-950">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-600 animate-pulse" />
+                        <span>⚡ SUPPLIER PROPOSAL / PITCH RECEIVED FOR YOUR EVENT</span>
+                      </div>
+                      <span className="text-[10px] text-amber-800 uppercase tracking-wider font-semibold">
+                        Direct Supplier Bid
+                      </span>
+                    </div>
+                  )}
+
                   {/* Top Bar with Service, Supplier & Status */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
                     <div className="flex items-center gap-4">
@@ -330,7 +510,7 @@ export default function HostRequestsPage() {
                           </span>
                         </div>
                         <h3 className="text-lg font-bold text-charcoal">
-                          {service?.name || 'Custom Package Inquiry'}
+                          {service?.name || req.requirements || 'Bespoke Celebration Proposal'}
                         </h3>
                         <span className="text-xs text-charcoal/70 font-sans flex items-center gap-1.5 mt-0.5">
                           <Building2 className="w-3.5 h-3.5 text-taupe" />
@@ -340,7 +520,7 @@ export default function HostRequestsPage() {
                     </div>
 
                     <div className="text-left sm:text-right">
-                      <div className="text-[10px] text-stone-400 uppercase font-bold">Total Package Rate</div>
+                      <div className="text-[10px] text-stone-400 uppercase font-bold">Proposed Quote</div>
                       <div className="text-xl font-bold text-charcoal font-mono">€{priceNum.toLocaleString()}</div>
                       <span className="text-[11px] text-emerald-700 font-semibold block">
                         20% Escrow Deposit: €{depositNum.toLocaleString()}
@@ -375,7 +555,7 @@ export default function HostRequestsPage() {
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-stone-400 uppercase font-bold block">Submitted Date</span>
+                      <span className="text-[10px] text-stone-400 uppercase font-bold block">Date Submitted</span>
                       <span className="text-xs font-semibold text-stone-600 flex items-center gap-1 mt-0.5">
                         <Clock className="w-3.5 h-3.5 text-taupe shrink-0" />
                         {dateSubmitted}
@@ -383,9 +563,19 @@ export default function HostRequestsPage() {
                     </div>
                   </div>
 
-                  {/* Requirements & Supplier Response */}
+                  {/* Pitch Notes & Requirements */}
                   <div className="space-y-2.5">
-                    {req.requirements && (
+                    {req.supplier_pitch_notes && (
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-sand-50 border border-amber-200/90 text-xs text-charcoal leading-relaxed shadow-soft-xs">
+                        <div className="flex items-center gap-1.5 font-bold text-amber-950 mb-1">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Supplier&apos;s Personalized Pitch Note:</span>
+                        </div>
+                        <p className="text-stone-700 italic font-medium">&quot;{req.supplier_pitch_notes}&quot;</p>
+                      </div>
+                    )}
+
+                    {req.requirements && !isPitch && (
                       <div className="p-3.5 rounded-2xl bg-sand-50/80 border border-stone-200 text-xs text-stone-700 leading-relaxed">
                         <strong className="text-charcoal block mb-0.5">Your Requirements & Preferences:</strong>
                         {req.requirements}
@@ -409,7 +599,41 @@ export default function HostRequestsPage() {
                       Inquiry ID: <span className="font-mono">{req.id?.slice(0, 8)}</span> • Protected by LEEMEVENT Escrow
                     </span>
 
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      {/* Accept / Decline Proposal Action Buttons */}
+                      {isPitch && normStatus === 'Pending' && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleAcceptProposal(req)}
+                            disabled={isAccepting}
+                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-soft-sm hover:scale-[1.02] disabled:opacity-50"
+                          >
+                            {isAccepting ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Accepting...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Accept Proposal</span>
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeclineProposal(req)}
+                            disabled={isAccepting}
+                            className="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Decline</span>
+                          </button>
+                        </>
+                      )}
+
                       {canCancel && (
                         <button
                           onClick={() => handleOpenCancelModal(req)}
@@ -490,7 +714,7 @@ export default function HostRequestsPage() {
                       </button>
 
                       <Link
-                        href={`/dashboard/host/messages?supplierId=${req.supplier_id || req.supplier?.id || req.service?.supplier_id || ''}&supplierEmail=${encodeURIComponent(req.supplier?.profile?.email || req.supplier?.email || req.service?.supplier?.profile?.email || req.service?.supplier?.email || req.supplier_email || '')}&supplierName=${encodeURIComponent(req.supplier?.business_name || req.supplier?.profile?.full_name || req.service?.supplier?.business_name || req.service?.supplier?.profile?.full_name || req.supplier?.name || 'Specialist Partner')}`}
+                        href={`/dashboard/host/messages?supplierId=${req.supplier_id || req.supplier?.id || req.service?.supplier_id || ''}&supplierEmail=${encodeURIComponent(req.supplier?.profile?.email || req.supplier?.email || req.service?.supplier?.profile?.email || req.service?.supplier?.email || req.supplier_email || '')}&supplierName=${encodeURIComponent(req.supplier?.business_name || req.supplier?.profile?.full_name || req.service?.supplier?.business_name || req.service?.supplier?.profile?.full_name || req.supplier?.name || 'Specialist Partner')}&service_name=${encodeURIComponent(req.service?.name || req.requirements || 'Celebration Proposal')}`}
                         className="btn-secondary px-4 py-2 text-xs flex items-center gap-1.5 hover:bg-stone-100 transition-colors"
                       >
                         <MessageSquare className="w-3.5 h-3.5" />
@@ -505,14 +729,26 @@ export default function HostRequestsPage() {
         )}
 
         {/* CANCEL BOOKING MODAL */}
-        {cancelModalBooking && (
+        {mounted && cancelModalBooking && createPortal(
           <div
-            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
+            className="fixed inset-0 z-[999999] w-screen h-screen min-h-[100dvh] bg-charcoal/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-200"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              minHeight: '100vh',
+              margin: 0,
+              zIndex: 999999,
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) setCancelModalBooking(null);
             }}
           >
-            <div className="bg-white rounded-3xl max-w-md w-full border border-stone-200 shadow-2xl overflow-hidden my-auto">
+            <div className="relative bg-white rounded-3xl max-w-md w-full border border-stone-200 shadow-2xl overflow-hidden my-auto z-10">
               <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center">
@@ -577,18 +813,31 @@ export default function HostRequestsPage() {
                 </div>
               </form>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* GIVE REVIEW & RATING MODAL */}
-        {reviewModalBooking && (
+        {mounted && reviewModalBooking && createPortal(
           <div
-            className="fixed inset-0 z-[100] bg-charcoal/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
+            className="fixed inset-0 z-[999999] w-screen h-screen min-h-[100dvh] bg-charcoal/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain animate-in fade-in duration-200"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              minHeight: '100vh',
+              margin: 0,
+              zIndex: 999999,
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget && !reviewSubmitting) setReviewModalBooking(null);
             }}
           >
-            <div className="bg-white rounded-3xl max-w-lg w-full border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+            <div className="relative bg-white rounded-3xl max-w-lg w-full border border-stone-200 shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200 z-10">
               <div className="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
@@ -721,7 +970,8 @@ export default function HostRequestsPage() {
                 </form>
               )}
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* SUPPLIER PORTFOLIO MODAL */}

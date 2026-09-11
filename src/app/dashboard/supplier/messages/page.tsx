@@ -75,6 +75,7 @@ export default function SupplierMessagesPage() {
   const [inputText, setInputText] = useState('');
   const [loadingThreads, setLoadingThreads] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -98,14 +99,32 @@ export default function SupplierMessagesPage() {
     }
   };
 
+  // Cross-tab / Cross-window instant sync
+  useEffect(() => {
+    const handleStorageOrCustom = () => {
+      if (activePartner) {
+        loadThreadMessages(activePartner, false);
+      }
+      loadConversations(false);
+    };
+
+    window.addEventListener('storage', handleStorageOrCustom);
+    window.addEventListener('leemevents:message_sent', handleStorageOrCustom);
+    return () => {
+      window.removeEventListener('storage', handleStorageOrCustom);
+      window.removeEventListener('leemevents:message_sent', handleStorageOrCustom);
+    };
+  }, [activePartner]);
+
   // URL Query Param Support for direct navigation: ?hostId=...&hostEmail=...&hostName=...&bookingId=...
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const hostId = params.get('hostId');
-      const hostEmail = params.get('hostEmail');
-      const hostName = params.get('hostName');
+      const hostId = params.get('hostId') || params.get('recipient_id') || params.get('id');
+      const hostEmail = params.get('hostEmail') || params.get('recipient_email') || params.get('email');
+      const hostName = params.get('hostName') || params.get('recipient_name') || params.get('name');
       const bookingId = params.get('bookingId');
+      const serviceName = params.get('service_name') || params.get('serviceName');
 
       if (hostId || hostEmail) {
         const directThread: ConversationThread = {
@@ -113,10 +132,11 @@ export default function SupplierMessagesPage() {
           partner_email: hostEmail || '',
           partner_name: hostName || hostEmail?.split('@')[0] || 'Valued Host',
           partner_role: 'consumer',
-          last_message: 'Direct host inquiry consultation',
+          last_message: serviceName ? `Consultation for ${serviceName}` : 'Direct host inquiry consultation',
           last_message_time: new Date().toISOString(),
           last_sender_role: 'supplier',
           booking_id: bookingId || undefined,
+          service_name: serviceName || undefined,
           unread_count: 0,
         };
         setActivePartner(directThread);
@@ -146,9 +166,30 @@ export default function SupplierMessagesPage() {
       // Synthesize rich conversation threads for every booking inquiry
       const bookingThreads: ConversationThread[] = (requestsData || []).map((req: any) => {
         const creator = req.event?.creator;
-        const hostId = creator?.id || creator?.auth_user_id || req.consumer_id || req.event?.user_id || `host_${req.id}`;
-        const hostEmail = creator?.email || req.consumer_email || 'host@leemevents.com';
-        const hostName = creator?.full_name || req.event?.title || 'Event Host';
+        const hostEmail =
+          req.consumer_email ||
+          req.consumer?.email ||
+          creator?.email ||
+          req.event?.user?.email ||
+          req.user?.email ||
+          '';
+        const hostId =
+          req.consumer_id ||
+          req.consumer?.id ||
+          creator?.id ||
+          creator?.auth_user_id ||
+          req.event?.user_id ||
+          req.user?.id ||
+          (hostEmail ? hostEmail : `host_${req.id}`);
+        const hostName =
+          req.consumer_name ||
+          req.consumer?.full_name ||
+          req.consumer?.name ||
+          creator?.full_name ||
+          creator?.name ||
+          req.event?.title ||
+          (hostEmail ? hostEmail.split('@')[0] : 'Event Host');
+
         return {
           partner_id: hostId,
           partner_email: hostEmail,
@@ -200,6 +241,19 @@ export default function SupplierMessagesPage() {
       console.error('Error loading supplier conversations:', err);
     } finally {
       setLoadingThreads(false);
+    }
+  };
+
+  // Manual Refresh Handler
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        loadConversations(false),
+        activePartner ? loadThreadMessages(activePartner, false) : Promise.resolve(),
+      ]);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
     }
   };
 
@@ -459,15 +513,14 @@ export default function SupplierMessagesPage() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                loadConversations(false);
-                if (activePartner) loadThreadMessages(activePartner, false);
-              }}
-              className="p-2.5 rounded-2xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors shadow-soft-sm flex items-center gap-1.5 text-xs font-semibold"
+              type="button"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className="p-2.5 rounded-2xl border border-stone-200 text-stone-600 hover:text-charcoal hover:bg-stone-50 transition-colors shadow-soft-sm flex items-center gap-1.5 text-xs font-semibold disabled:opacity-60 cursor-pointer"
               title="Refresh Messages"
             >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
+              <RefreshCw className={`w-4 h-4 transition-transform ${isRefreshing ? 'animate-spin text-taupe' : ''}`} />
+              <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
             </button>
           </div>
         </div>
